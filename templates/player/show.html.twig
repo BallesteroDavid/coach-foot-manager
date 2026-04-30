@@ -1,0 +1,62 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Player{% endblock %}
+
+{% block body %}
+    <h1>Player</h1>
+
+    <table class="table">
+        <tbody>
+            <tr>
+                <th>Id</th>
+                <td>{{ player.id }}</td>
+            </tr>
+            <tr>
+                <th>FirstName</th>
+                <td>{{ player.firstName }}</td>
+            </tr>
+            <tr>
+                <th>LastName</th>
+                <td>{{ player.lastName }}</td>
+            </tr>
+            <tr>
+                <th>BirthDate</th>
+                <td>{{ player.birthDate ? player.birthDate|date('Y-m-d') : '' }}</td>
+            </tr>
+            <tr>
+                <th>Email</th>
+                <td>{{ player.email }}</td>
+            </tr>
+            <tr>
+                <th>Phone</th>
+                <td>{{ player.phone }}</td>
+            </tr>
+            <tr>
+                <th>Position</th>
+                <td>{{ player.position }}</td>
+            </tr>
+            <tr>
+                <th>JerseyNumber</th>
+                <td>{{ player.jerseyNumber }}</td>
+            </tr>
+            <tr>
+                <th>Status</th>
+                <td>{{ player.status }}</td>
+            </tr>
+            <tr>
+                <th>CreatedAt</th>
+                <td>{{ player.createdAt ? player.createdAt|date('Y-m-d H:i:s') : '' }}</td>
+            </tr>
+            <tr>
+                <th>UpdatedAt</th>
+                <td>{{ player.updatedAt ? player.updatedAt|date('Y-m-d H:i:s') : '' }}</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <a href="{{ path('app_player_index') }}">back to list</a>
+
+    <a href="{{ path('app_player_edit', {'id': player.id}) }}">edit</a>
+
+    {{ include('player/_delete_form.html.twig') }}
+{% endblock %}
