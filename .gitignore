@@ -18,3 +18,28 @@
 /public/assets/
 /assets/vendor/
 ###< symfony/asset-mapper ###
+
+### IDE / éditeurs ###
+.vscode/
+.idea/
+
+### Système ###
+.DS_Store
+Thumbs.db
+
+### Logs ###
+*.log
+
+### Node / frontend ###
+/node_modules/
+/npm-debug.log
+/yarn-error.log
+/pnpm-debug.log
+
+### Docker local data ###
+/docker/mysql/data/
+/mysql-data/
+/database-data/
+
+### Backups ###
+*.bak

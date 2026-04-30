@@ -1,0 +1,77 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block body %}
+    <main class="dashboard-container">
+        <section class="dashboard-header">
+            <h1>Tableau de bord</h1>
+
+            {% if app.user %}
+                <p>Bienvenue {{ app.user.email }}</p>
+            {% endif %}
+        </section>
+
+        <section class="quick-actions">
+            <h2>Actions rapides</h2>
+
+            <div class="actions-grid">
+                <a href="#" class="dashboard-card">
+                    <h3>Créer un match</h3>
+                    <p>Planifier un nouveau match.</p>
+                </a>
+
+                <a href="#" class="dashboard-card">
+                    <h3>Créer un entraînement</h3>
+                    <p>Ajouter une séance à venir.</p>
+                </a>
+
+                <a href="#" class="dashboard-card">
+                    <h3>Ajouter un joueur</h3>
+                    <p>Créer une nouvelle fiche joueur.</p>
+                </a>
+
+                <a href="#" class="dashboard-card">
+                    <h3>Voir les convocations</h3>
+                    <p>Préparer ou suivre les convocations.</p>
+                </a>
+            </div>
+        </section>
+
+        <section class="dashboard-section">
+            <h2>À faire</h2>
+
+            <ul>
+                <li>Aucune tâche urgente pour le moment.</li>
+            </ul>
+        </section>
+
+        <section class="dashboard-section">
+            <h2>Résumé rapide</h2>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <strong>0</strong>
+                    <span>Joueurs</span>
+                </div>
+
+                <div class="stat-card">
+                    <strong>0</strong>
+                    <span>Équipes</span>
+                </div>
+
+                <div class="stat-card">
+                    <strong>0</strong>
+                    <span>Matchs à venir</span>
+                </div>
+
+                <div class="stat-card">
+                    <strong>0</strong>
+                    <span>Convocations</span>
+                </div>
+            </div>
+        </section>
+
+        <a href="{{ path('app_logout') }}">Se déconnecter</a>
+    </main>
+{% endblock %}
