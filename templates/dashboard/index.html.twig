@@ -1,53 +1,116 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Dashboard{% endblock %}
+{% block title %}Tableau de bord{% endblock %}
 
 {% block body %}
     <main class="dashboard-container">
-        <section class="dashboard-header">
-            <h1>Tableau de bord</h1>
 
-            {% if app.user %}
-                <p>Bienvenue {{ app.user.email }}</p>
-            {% endif %}
+        <section class="dashboard-header">
+            <div>
+                <span class="dashboard-badge">Tableau de bord</span>
+
+                <h1>Bienvenue sur Coach Foot Manager</h1>
+
+                {% if app.user %}
+                    <p>
+                        Connecté avec <strong>{{ app.user.email }}</strong>
+                    </p>
+                {% else %}
+                    <p>
+                        Gérez facilement vos équipes, joueurs, matchs et convocations.
+                    </p>
+                {% endif %}
+            </div>
+
+            <a href="{{ path('app_logout') }}" class="logout-link">
+                Se déconnecter
+            </a>
         </section>
 
-        <section class="quick-actions">
-            <h2>Actions rapides</h2>
+        <section class="dashboard-section">
+            <div class="section-title">
+                <h2>Actions rapides</h2>
+                <p>Les actions principales pour gérer ton club rapidement.</p>
+            </div>
 
             <div class="actions-grid">
+                <a href="{{ path('app_club_index') }}" class="dashboard-card">
+                    <span class="card-icon">🏟️</span>
+                    <h3>Gérer le club</h3>
+                    <p>Voir et modifier les informations du club.</p>
+                </a>
+
+                <a href="{{ path('app_team_index') }}" class="dashboard-card">
+                    <span class="card-icon">🛡️</span>
+                    <h3>Gérer les équipes</h3>
+                    <p>Créer et organiser les équipes du club.</p>
+                </a>
+
                 <a href="#" class="dashboard-card">
+                    <span class="card-icon">⚽</span>
                     <h3>Créer un match</h3>
-                    <p>Planifier un nouveau match.</p>
+                    <p>Planifier un nouveau match pour une équipe.</p>
                 </a>
 
                 <a href="#" class="dashboard-card">
+                    <span class="card-icon">🏃</span>
                     <h3>Créer un entraînement</h3>
-                    <p>Ajouter une séance à venir.</p>
+                    <p>Ajouter une séance à venir au calendrier.</p>
                 </a>
 
                 <a href="#" class="dashboard-card">
+                    <span class="card-icon">👤</span>
                     <h3>Ajouter un joueur</h3>
-                    <p>Créer une nouvelle fiche joueur.</p>
+                    <p>Créer une nouvelle fiche joueur dans le club.</p>
                 </a>
 
                 <a href="#" class="dashboard-card">
+                    <span class="card-icon">📋</span>
                     <h3>Voir les convocations</h3>
-                    <p>Préparer ou suivre les convocations.</p>
+                    <p>Préparer ou suivre les joueurs convoqués.</p>
                 </a>
             </div>
         </section>
 
-        <section class="dashboard-section">
-            <h2>À faire</h2>
+        <section class="dashboard-two-columns">
+            <div class="dashboard-section">
+                <div class="section-title">
+                    <h2>À faire</h2>
+                    <p>Les tâches importantes apparaîtront ici.</p>
+                </div>
 
-            <ul>
-                <li>Aucune tâche urgente pour le moment.</li>
-            </ul>
+                <div class="todo-card">
+                    <span class="todo-status"></span>
+
+                    <div>
+                        <strong>Aucune tâche urgente</strong>
+                        <p>
+                            Quand il faudra compléter une convocation, renseigner un score
+                            ou valider des présences, ce sera affiché ici.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="dashboard-section">
+                <div class="section-title">
+                    <h2>Prochain événement</h2>
+                    <p>Le prochain match ou entraînement sera affiché ici.</p>
+                </div>
+
+                <div class="empty-event">
+                    <span>📅</span>
+                    <strong>Aucun événement prévu</strong>
+                    <p>Crée un match ou un entraînement pour commencer.</p>
+                </div>
+            </div>
         </section>
 
         <section class="dashboard-section">
-            <h2>Résumé rapide</h2>
+            <div class="section-title">
+                <h2>Résumé rapide</h2>
+                <p>Une vue simple des informations principales du club.</p>
+            </div>
 
             <div class="stats-grid">
                 <div class="stat-card">
@@ -72,6 +135,5 @@
             </div>
         </section>
 
-        <a href="{{ path('app_logout') }}">Se déconnecter</a>
     </main>
 {% endblock %}
