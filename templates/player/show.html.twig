@@ -1,62 +1,71 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Player{% endblock %}
+{% block title %}Fiche joueur{% endblock %}
 
 {% block body %}
-    <h1>Player</h1>
+    <h1>Fiche joueur</h1>
 
     <table class="table">
         <tbody>
             <tr>
-                <th>Id</th>
-                <td>{{ player.id }}</td>
-            </tr>
-            <tr>
-                <th>FirstName</th>
+                <th>Prénom</th>
                 <td>{{ player.firstName }}</td>
             </tr>
+
             <tr>
-                <th>LastName</th>
+                <th>Nom</th>
                 <td>{{ player.lastName }}</td>
             </tr>
+
             <tr>
-                <th>BirthDate</th>
-                <td>{{ player.birthDate ? player.birthDate|date('Y-m-d') : '' }}</td>
+                <th>Date de naissance</th>
+                <td>
+                    {{ player.birthDate ? player.birthDate|date('d/m/Y') : 'Non renseignée' }}
+                </td>
             </tr>
+
             <tr>
-                <th>Email</th>
-                <td>{{ player.email }}</td>
+                <th>Email du joueur</th>
+                <td>{{ player.email ?: 'Non renseigné' }}</td>
             </tr>
+
             <tr>
-                <th>Phone</th>
-                <td>{{ player.phone }}</td>
+                <th>Téléphone du joueur</th>
+                <td>{{ player.phone ?: 'Non renseigné' }}</td>
             </tr>
+
             <tr>
-                <th>Position</th>
-                <td>{{ player.position }}</td>
+                <th>Email du parent / responsable légal</th>
+                <td>{{ player.guardianEmail ?: 'Non renseigné' }}</td>
             </tr>
+
             <tr>
-                <th>JerseyNumber</th>
-                <td>{{ player.jerseyNumber }}</td>
+                <th>Téléphone du parent / responsable légal</th>
+                <td>{{ player.guardianPhone ?: 'Non renseigné' }}</td>
             </tr>
+
             <tr>
-                <th>Status</th>
+                <th>Poste</th>
+                <td>{{ player.position ?: 'Non renseigné' }}</td>
+            </tr>
+
+            <tr>
+                <th>Numéro de maillot</th>
+                <td>{{ player.jerseyNumber ?: 'Non renseigné' }}</td>
+            </tr>
+
+            <tr>
+                <th>Statut</th>
                 <td>{{ player.status }}</td>
             </tr>
+
             <tr>
-                <th>CreatedAt</th>
-                <td>{{ player.createdAt ? player.createdAt|date('Y-m-d H:i:s') : '' }}</td>
-            </tr>
-            <tr>
-                <th>UpdatedAt</th>
-                <td>{{ player.updatedAt ? player.updatedAt|date('Y-m-d H:i:s') : '' }}</td>
+                <th>Équipe</th>
+                <td>{{ player.team ? player.team.name : 'Aucune équipe' }}</td>
             </tr>
         </tbody>
     </table>
 
-    <a href="{{ path('app_player_index') }}">back to list</a>
-
-    <a href="{{ path('app_player_edit', {'id': player.id}) }}">edit</a>
-
-    {{ include('player/_delete_form.html.twig') }}
+    <a href="{{ path('app_player_index') }}">Retour à la liste</a>
+    <a href="{{ path('app_player_edit', { id: player.id }) }}">Modifier</a>
 {% endblock %}

@@ -26,9 +26,19 @@ class PlayerType extends AbstractType
                 'required' => false,
             ])
             ->add('email', EmailType::class, [
+                'label' => 'Email du joueur',
                 'required' => false,
             ])
             ->add('phone', TelType::class, [
+                'label' => 'Téléphone du joueur',
+                'required' => false,
+            ])
+            ->add('guardianEmail', EmailType::class, [
+                'label' => 'Email du parent / responsable légal',
+                'required' => false,
+            ])
+            ->add('guardianPhone', TelType::class, [
+                'label' => 'Téléphone du parent / responsable légal',
                 'required' => false,
             ])
             ->add('position', ChoiceType::class, [
@@ -41,6 +51,7 @@ class PlayerType extends AbstractType
                     'Attaquant' => 'attaquant',
                 ],
             ])
+            // numero du maillot entre 1 et 99 
             ->add('jerseyNumber', IntegerType::class, [
                 'required' => false,
                 'attr' => [

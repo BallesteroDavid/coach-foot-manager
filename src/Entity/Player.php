@@ -6,6 +6,7 @@ use App\Repository\PlayerRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
+use Symfony\Component\Validator\Context\ExecutionContextInterface;
 
 #[ORM\Entity(repositoryClass: PlayerRepository::class)]
 class Player
@@ -30,9 +31,17 @@ class Player
     #[ORM\Column(length: 30, nullable: true)]
     private ?string $phone = null;
 
+    #[ORM\Column(length: 180, nullable: true)]
+    #[Assert\Email(message: "L'adresse email du responsable légal n'est pas valide")]
+    private ?string $guardianEmail = null;
+
+    #[ORM\Column(length: 30, nullable: true)]
+    private ?string $guardianPhone = null;
+
     #[ORM\Column(length: 50, nullable: true)]
     private ?string $position = null;
 
+    // validation num entre 1 et 99
     #[ORM\Column(nullable: true)]
     #[Assert\Range(
         min: 1,
@@ -124,6 +133,30 @@ class Player
         return $this;
     }
 
+        public function getGuardianEmail(): ?string
+    {
+        return $this->guardianEmail;
+    }
+
+    public function setGuardianEmail(?string $guardianEmail): static
+    {
+        $this->guardianEmail = $guardianEmail;
+
+        return $this;
+    }
+
+    public function getGuardianPhone(): ?string
+    {
+        return $this->guardianPhone;
+    }
+
+    public function setGuardianPhone(?string $guardianPhone): static
+    {
+        $this->guardianPhone = $guardianPhone;
+
+        return $this;
+    }
+
     public function getPosition(): ?string
     {
         return $this->position;
@@ -195,5 +228,27 @@ class Player
         $this->team = $team;
 
         return $this;
+    }
+
+    // Si le joueur n'a pas d'email OU pas de téléphone alors il faut renseigner l'email ET le téléphone du responsable légal
+    #[Assert\Callback]
+    public function validateContactInformation(ExecutionContextInterface $context): void
+    {
+        $playerEmailMissing = empty($this->email);
+        $playerPhoneMissing = empty($this->phone);
+
+        if ($playerEmailMissing || $playerPhoneMissing) {
+            if (empty($this->guardianEmail)) {
+                $context->buildViolation('L’email du parent / responsable légal est obligatoire si les coordonnées du joueur sont incomplètes.')
+                    ->atPath('guardianEmail')
+                    ->addViolation();
+            }
+
+            if (empty($this->guardianPhone)) {
+                $context->buildViolation('Le téléphone du parent / responsable légal est obligatoire si les coordonnées du joueur sont incomplètes.')
+                    ->atPath('guardianPhone')
+                    ->addViolation();
+            }
+        }
     }
 }

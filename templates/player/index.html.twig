@@ -1,53 +1,75 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Player index{% endblock %}
+{% block title %}Joueurs{% endblock %}
 
 {% block body %}
-    <h1>Player index</h1>
+    <h1>Liste des joueurs</h1>
 
-    <table class="table">
-        <thead>
-            <tr>
-                <th>Id</th>
-                <th>FirstName</th>
-                <th>LastName</th>
-                <th>BirthDate</th>
-                <th>Email</th>
-                <th>Phone</th>
-                <th>Position</th>
-                <th>JerseyNumber</th>
-                <th>Status</th>
-                <th>CreatedAt</th>
-                <th>UpdatedAt</th>
-                <th>actions</th>
-            </tr>
-        </thead>
-        <tbody>
-        {% for player in players %}
-            <tr>
-                <td>{{ player.id }}</td>
-                <td>{{ player.firstName }}</td>
-                <td>{{ player.lastName }}</td>
-                <td>{{ player.birthDate ? player.birthDate|date('Y-m-d') : '' }}</td>
-                <td>{{ player.email }}</td>
-                <td>{{ player.phone }}</td>
-                <td>{{ player.position }}</td>
-                <td>{{ player.jerseyNumber }}</td>
-                <td>{{ player.status }}</td>
-                <td>{{ player.createdAt ? player.createdAt|date('Y-m-d H:i:s') : '' }}</td>
-                <td>{{ player.updatedAt ? player.updatedAt|date('Y-m-d H:i:s') : '' }}</td>
-                <td>
-                    <a href="{{ path('app_player_show', {'id': player.id}) }}">show</a>
-                    <a href="{{ path('app_player_edit', {'id': player.id}) }}">edit</a>
-                </td>
-            </tr>
-        {% else %}
-            <tr>
-                <td colspan="12">no records found</td>
-            </tr>
-        {% endfor %}
-        </tbody>
-    </table>
+    <a href="{{ path('app_player_new') }}">Ajouter un joueur</a>
 
-    <a href="{{ path('app_player_new') }}">Create new</a>
+    {% if players is empty %}
+        <p>Aucun joueur enregistré.</p>
+    {% else %}
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Nom</th>
+                    <th>Équipe</th>
+                    <th>Poste</th>
+                    <th>N°</th>
+                    <th>Email joueur</th>
+                    <th>Téléphone joueur</th>
+                    <th>Email responsable</th>
+                    <th>Téléphone responsable</th>
+                    <th>Statut</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for player in players %}
+                    <tr>
+                        <td>{{ player.firstName }} {{ player.lastName }}</td>
+
+                        <td>
+                            {{ player.team ? player.team.name : 'Aucune équipe' }}
+                        </td>
+
+                        <td>
+                            {{ player.position ?: 'Non renseigné' }}
+                        </td>
+
+                        <td>
+                            {{ player.jerseyNumber ?: '-' }}
+                        </td>
+
+                        <td>
+                            {{ player.email ?: '-' }}
+                        </td>
+
+                        <td>
+                            {{ player.phone ?: '-' }}
+                        </td>
+
+                        <td>
+                            {{ player.guardianEmail ?: '-' }}
+                        </td>
+
+                        <td>
+                            {{ player.guardianPhone ?: '-' }}
+                        </td>
+
+                        <td>
+                            {{ player.status }}
+                        </td>
+
+                        <td>
+                            <a href="{{ path('app_player_show', { id: player.id }) }}">Voir</a>
+                            <a href="{{ path('app_player_edit', { id: player.id }) }}">Modifier</a>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endif %}
 {% endblock %}
