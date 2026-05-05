@@ -18,7 +18,10 @@ final class PlayerController extends AbstractController
     public function index(PlayerRepository $playerRepository): Response
     {
         return $this->render('player/index.html.twig', [
-            'players' => $playerRepository->findAll(),
+            'players' => $playerRepository->findBy([], [
+                'lastName' => 'ASC',
+                'firstName' => 'ASC',
+            ]),
         ]);
     }
 
@@ -32,6 +35,7 @@ final class PlayerController extends AbstractController
         if ($form->isSubmitted() && $form->isValid()) {
             $entityManager->persist($player);
             $entityManager->flush();
+            $this->addFlash('success', 'Le joueur a bien été créé.');
 
             return $this->redirectToRoute('app_player_index', [], Response::HTTP_SEE_OTHER);
         }
@@ -60,6 +64,7 @@ final class PlayerController extends AbstractController
             $player->setUpdatedAt(new \DateTimeImmutable());
             
             $entityManager->flush();
+            $this->addFlash('success', 'Le joueur a bien été modifié.');
 
             return $this->redirectToRoute('app_player_index', [], Response::HTTP_SEE_OTHER);
         }
@@ -76,6 +81,7 @@ final class PlayerController extends AbstractController
         if ($this->isCsrfTokenValid('delete'.$player->getId(), $request->getPayload()->getString('_token'))) {
             $entityManager->remove($player);
             $entityManager->flush();
+            $this->addFlash('success', 'Le joueur a bien été supprimé.');
         }
 
         return $this->redirectToRoute('app_player_index', [], Response::HTTP_SEE_OTHER);

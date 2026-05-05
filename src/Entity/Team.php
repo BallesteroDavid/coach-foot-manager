@@ -7,6 +7,7 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: TeamRepository::class)]
 class Team
@@ -17,9 +18,18 @@ class Team
     private ?int $id = null;
 
     #[ORM\Column(length: 100)]
+    #[Assert\NotBlank(message: "Le nom de l'équipe est obligatoire.")]
+    #[Assert\Length(
+        max: 100,
+        maxMessage: "Le nom de l'équipe ne peut pas dépasser {{ limit }} caractères."
+    )]
     private ?string $name = null;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
+    #[Assert\Length(
+        max: 1000,
+        maxMessage: 'La description ne peut pas dépasser {{ limit }} caractères.'
+    )]
     private ?string $description = null;
 
     #[ORM\Column]
@@ -30,6 +40,7 @@ class Team
 
     #[ORM\ManyToOne(inversedBy: 'teams')]
     #[ORM\JoinColumn(nullable: false)]
+    #[Assert\NotNull(message: 'Le club est obligatoire.')]
     private ?Club $club = null;
 
     /**
@@ -46,6 +57,10 @@ class Team
 
     public function __construct()
     {
+        // date de création automatiquement renseignée à la création de l'équipe
+        $this->createdAt = new \DateTimeImmutable();
+
+        // Initialisation des collections liées à l'équipe
         $this->players = new ArrayCollection();
         $this->footballMatches = new ArrayCollection();
     }
@@ -65,6 +80,21 @@ class Team
         $this->name = $name;
 
         return $this;
+    }
+
+    public function __toString(): string
+    {
+        return $this->name ?? '';
+    }
+
+    public function getPlayersCount(): int
+    {
+        return $this->players->count();
+    }
+
+    public function getFootballMatchesCount(): int
+    {
+        return $this->footballMatches->count();
     }
 
     public function getDescription(): ?string

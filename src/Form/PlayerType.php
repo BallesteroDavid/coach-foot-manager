@@ -19,29 +19,45 @@ class PlayerType extends AbstractType
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
         $builder
-            ->add('firstName')
-            ->add('lastName')
+            ->add('firstName', null, [
+                'label' => 'Prénom',
+            ])
+
+            ->add('lastName', null, [
+                'label' => 'Nom',
+            ])
+
             ->add('birthDate', DateType::class, [
                 'widget' => 'single_text',
+                'input' => 'datetime_immutable',
                 'required' => false,
+                'label' => 'Date de naissance',
             ])
+
             ->add('email', EmailType::class, [
                 'label' => 'Email du joueur',
                 'required' => false,
+                'help' => 'Si l’email ou le téléphone du joueur est manquant, les coordonnées du responsable légal seront demandées.',
             ])
+
             ->add('phone', TelType::class, [
                 'label' => 'Téléphone du joueur',
                 'required' => false,
+                'help' => 'Si l’email ou le téléphone du joueur est manquant, les coordonnées du responsable légal seront demandées.',
             ])
+
             ->add('guardianEmail', EmailType::class, [
                 'label' => 'Email du parent / responsable légal',
                 'required' => false,
             ])
+
             ->add('guardianPhone', TelType::class, [
                 'label' => 'Téléphone du parent / responsable légal',
                 'required' => false,
             ])
+
             ->add('position', ChoiceType::class, [
+                'label' => 'Poste',
                 'required' => false,
                 'placeholder' => 'Choisir un poste',
                 'choices' => [
@@ -51,15 +67,19 @@ class PlayerType extends AbstractType
                     'Attaquant' => 'attaquant',
                 ],
             ])
-            // numero du maillot entre 1 et 99 
+
             ->add('jerseyNumber', IntegerType::class, [
+                'label' => 'Numéro de maillot',
                 'required' => false,
+                'help' => 'Le numéro doit être compris entre 1 et 99.',
                 'attr' => [
                     'min' => 1,
                     'max' => 99,
                 ],
             ])
+
             ->add('status', ChoiceType::class, [
+                'label' => 'Statut',
                 'choices' => [
                     'Actif' => 'active',
                     'Blessé' => 'injured',
@@ -67,11 +87,13 @@ class PlayerType extends AbstractType
                     'Inactif' => 'inactive',
                 ],
             ])
+
             ->add('team', EntityType::class, [
                 'class' => Team::class,
                 'choice_label' => 'name',
                 'placeholder' => 'Choisir une équipe',
                 'required' => false,
+                'label' => 'Équipe',
             ])
         ;
     }

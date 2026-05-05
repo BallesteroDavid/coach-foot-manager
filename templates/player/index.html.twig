@@ -7,6 +7,20 @@
 
     <a href="{{ path('app_player_new') }}">Ajouter un joueur</a>
 
+    {% set positionLabels = {
+        gardien: 'Gardien',
+        defenseur: 'Défenseur',
+        milieu: 'Milieu',
+        attaquant: 'Attaquant'
+    } %}
+
+    {% set statusLabels = {
+        active: 'Actif',
+        injured: 'Blessé',
+        suspended: 'Suspendu',
+        inactive: 'Inactif'
+    } %}
+
     {% if players is empty %}
         <p>Aucun joueur enregistré.</p>
     {% else %}
@@ -29,14 +43,14 @@
             <tbody>
                 {% for player in players %}
                     <tr>
-                        <td>{{ player.firstName }} {{ player.lastName }}</td>
+                        <td>{{ player.fullName }}</td>
 
                         <td>
                             {{ player.team ? player.team.name : 'Aucune équipe' }}
                         </td>
 
                         <td>
-                            {{ player.position ?: 'Non renseigné' }}
+                            {{ positionLabels[player.position]|default(player.position ?: 'Non renseigné') }}
                         </td>
 
                         <td>
@@ -60,7 +74,7 @@
                         </td>
 
                         <td>
-                            {{ player.status }}
+                            {{ statusLabels[player.status]|default(player.status) }}
                         </td>
 
                         <td>

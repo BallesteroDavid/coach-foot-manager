@@ -1,11 +1,13 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}New Player{% endblock %}
+{% block title %}Créer un joueur{% endblock %}
 
 {% block body %}
-    <h1>Create new Player</h1>
+    <h1>Créer un joueur</h1>
 
-    {{ include('player/_form.html.twig') }}
+    {{ include('player/_form.html.twig', {
+        button_label: 'Créer le joueur'
+    }) }}
 
-    <a href="{{ path('app_player_index') }}">back to list</a>
+    <a href="{{ path('app_player_index') }}">Retour à la liste</a>
 {% endblock %}

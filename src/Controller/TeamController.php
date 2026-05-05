@@ -18,7 +18,9 @@ final class TeamController extends AbstractController
     public function index(TeamRepository $teamRepository): Response
     {
         return $this->render('team/index.html.twig', [
-            'teams' => $teamRepository->findAll(),
+            'teams' => $teamRepository->findBy([], [
+                'name' => 'ASC',
+            ]),
         ]);
     }
 
@@ -27,15 +29,14 @@ final class TeamController extends AbstractController
     {
         $team = new Team();
 
-        // Date de création automatique
-        $team->setCreatedAt(new \DateTimeImmutable());
-
         $form = $this->createForm(TeamType::class, $team);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
             $entityManager->persist($team);
             $entityManager->flush();
+
+            $this->addFlash('success', "L'équipe a bien été créée.");
 
             return $this->redirectToRoute('app_team_index', [], Response::HTTP_SEE_OTHER);
         }
@@ -61,10 +62,11 @@ final class TeamController extends AbstractController
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            // Date de modification automatique
             $team->setUpdatedAt(new \DateTimeImmutable());
 
             $entityManager->flush();
+
+            $this->addFlash('success', "L'équipe a bien été modifiée.");
 
             return $this->redirectToRoute('app_team_index', [], Response::HTTP_SEE_OTHER);
         }
@@ -79,8 +81,21 @@ final class TeamController extends AbstractController
     public function delete(Request $request, Team $team, EntityManagerInterface $entityManager): Response
     {
         if ($this->isCsrfTokenValid('delete'.$team->getId(), $request->getPayload()->getString('_token'))) {
+            if ($team->getPlayers()->count() > 0 || $team->getFootballMatches()->count() > 0) {
+                $this->addFlash(
+                    'danger',
+                    "Impossible de supprimer cette équipe : elle possède déjà des joueurs ou des matchs associés."
+                );
+
+                return $this->redirectToRoute('app_team_show', [
+                    'id' => $team->getId(),
+                ], Response::HTTP_SEE_OTHER);
+            }
+
             $entityManager->remove($team);
             $entityManager->flush();
+
+            $this->addFlash('success', "L'équipe a bien été supprimée.");
         }
 
         return $this->redirectToRoute('app_team_index', [], Response::HTTP_SEE_OTHER);

@@ -5,8 +5,27 @@
 {% block body %}
     <h1>Fiche joueur</h1>
 
+    {% set positionLabels = {
+        gardien: 'Gardien',
+        defenseur: 'Défenseur',
+        milieu: 'Milieu',
+        attaquant: 'Attaquant'
+    } %}
+
+    {% set statusLabels = {
+        active: 'Actif',
+        injured: 'Blessé',
+        suspended: 'Suspendu',
+        inactive: 'Inactif'
+    } %}
+
     <table class="table">
         <tbody>
+            <tr>
+                <th>Nom complet</th>
+                <td>{{ player.fullName }}</td>
+            </tr>
+
             <tr>
                 <th>Prénom</th>
                 <td>{{ player.firstName }}</td>
@@ -46,7 +65,7 @@
 
             <tr>
                 <th>Poste</th>
-                <td>{{ player.position ?: 'Non renseigné' }}</td>
+                <td>{{ positionLabels[player.position]|default(player.position ?: 'Non renseigné') }}</td>
             </tr>
 
             <tr>
@@ -56,7 +75,7 @@
 
             <tr>
                 <th>Statut</th>
-                <td>{{ player.status }}</td>
+                <td>{{ statusLabels[player.status]|default(player.status) }}</td>
             </tr>
 
             <tr>
@@ -68,4 +87,6 @@
 
     <a href="{{ path('app_player_index') }}">Retour à la liste</a>
     <a href="{{ path('app_player_edit', { id: player.id }) }}">Modifier</a>
+
+    {{ include('player/_delete_form.html.twig') }}
 {% endblock %}

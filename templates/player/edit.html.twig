@@ -1,13 +1,15 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Edit Player{% endblock %}
+{% block title %}Modifier le joueur{% endblock %}
 
 {% block body %}
-    <h1>Edit Player</h1>
+    <h1>Modifier le joueur</h1>
 
-    {{ include('player/_form.html.twig', {'button_label': 'Update'}) }}
+    {{ include('player/_form.html.twig', {
+        button_label: 'Mettre à jour le joueur'
+    }) }}
 
-    <a href="{{ path('app_player_index') }}">back to list</a>
+    <a href="{{ path('app_player_index') }}">Retour à la liste</a>
 
     {{ include('player/_delete_form.html.twig') }}
 {% endblock %}

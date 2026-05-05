@@ -1,13 +1,29 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Edit Team{% endblock %}
+{% block title %}Modifier l'équipe{% endblock %}
 
 {% block body %}
-    <h1>Edit Team</h1>
+    <h1>Modifier l'équipe</h1>
 
-    {{ include('team/_form.html.twig', {'button_label': 'Update'}) }}
+    {{ include('team/_form.html.twig', {
+        button_label: 'Mettre à jour l’équipe'
+    }) }}
 
-    <a href="{{ path('app_team_index') }}">back to list</a>
+    <a href="{{ path('app_team_index') }}">Retour à la liste</a>
+    <a href="{{ path('app_team_show', { id: team.id }) }}">Retour au détail</a>
 
-    {{ include('team/_delete_form.html.twig') }}
+    {% if team.playersCount > 0 or team.footballMatchesCount > 0 %}
+        <div class="alert alert-warning">
+            <p>
+                Cette équipe possède déjà des joueurs ou des matchs associés.
+                Elle ne peut pas être supprimée directement.
+            </p>
+
+            <p>
+                Retire d'abord les joueurs et les matchs liés avant de supprimer cette équipe.
+            </p>
+        </div>
+    {% else %}
+        {{ include('team/_delete_form.html.twig') }}
+    {% endif %}
 {% endblock %}

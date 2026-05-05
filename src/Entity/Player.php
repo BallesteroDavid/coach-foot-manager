@@ -17,15 +17,24 @@ class Player
     private ?int $id = null;
 
     #[ORM\Column(length: 100)]
+    #[Assert\NotBlank(message: 'Le prénom du joueur est obligatoire.')]
+    #[Assert\Length(
+        max: 100,
+        maxMessage: 'Le prénom ne peut pas dépasser {{ limit }} caractères.')]
     private ?string $firstName = null;
 
     #[ORM\Column(length: 100)]
+    #[Assert\NotBlank(message: 'Le nom du joueur est obligatoire.')]
+    #[Assert\Length(
+        max: 100,
+        maxMessage: 'Le nom ne peut pas dépasser {{ limit }} caractères.')]
     private ?string $lastName = null;
 
     #[ORM\Column(type: Types::DATE_IMMUTABLE, nullable: true)]
     private ?\DateTimeImmutable $birthDate = null;
 
     #[ORM\Column(length: 180, nullable: true)]
+    #[Assert\Email(message: "L'adresse email du joueur n'est pas valide.")]
     private ?string $email = null;
 
     #[ORM\Column(length: 30, nullable: true)]
@@ -41,7 +50,7 @@ class Player
     #[ORM\Column(length: 50, nullable: true)]
     private ?string $position = null;
 
-    // validation num entre 1 et 99
+    // validation du numéro du maillot entre 1 et 99
     #[ORM\Column(nullable: true)]
     #[Assert\Range(
         min: 1,
@@ -51,6 +60,10 @@ class Player
     private ?int $jerseyNumber = null;
 
     #[ORM\Column(length: 30)]
+    #[Assert\NotBlank(message: 'Le statut du joueur est obligatoire.')]
+    #[Assert\Choice(
+        choices: ['active', 'injured', 'suspended', 'inactive'],
+        message: 'Le statut du joueur est invalide.')]
     private ?string $status = null;
 
     #[ORM\Column]
@@ -97,6 +110,13 @@ class Player
         return $this;
     }
 
+    // Retourne le nom complet du joueur.
+    // Exemple : Kylian Mbappé
+    public function getFullName(): string
+    {
+        return trim(($this->firstName ?? '') . ' ' . ($this->lastName ?? ''));
+    }
+
     public function getBirthDate(): ?\DateTimeImmutable
     {
         return $this->birthDate;
@@ -133,7 +153,7 @@ class Player
         return $this;
     }
 
-        public function getGuardianEmail(): ?string
+    public function getGuardianEmail(): ?string
     {
         return $this->guardianEmail;
     }

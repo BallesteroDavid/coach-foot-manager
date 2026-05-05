@@ -15,14 +15,21 @@ class TeamType extends AbstractType
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
         $builder
-            ->add('name')
-            ->add('description', TextareaType::class, [
-                'required' => false,
+            ->add('name', null, [
+                'label' => "Nom de l'équipe",
             ])
+
+            ->add('description', TextareaType::class, [
+                'label' => 'Description',
+                'required' => false,
+                'help' => 'Description optionnelle de l’équipe.',
+            ])
+
             ->add('club', EntityType::class, [
                 'class' => Club::class,
                 'choice_label' => 'name',
                 'placeholder' => 'Choisir un club',
+                'label' => 'Club',
             ])
         ;
     }
