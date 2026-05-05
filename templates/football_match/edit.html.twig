@@ -1,0 +1,29 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Modifier le match{% endblock %}
+
+{% block body %}
+    <h1>Modifier le match</h1>
+
+    {{ include('football_match/_form.html.twig', {
+        button_label: 'Mettre à jour le match'
+    }) }}
+
+    <a href="{{ path('app_football_match_index') }}">Retour à la liste</a>
+    <a href="{{ path('app_football_match_show', { id: football_match.id }) }}">Retour au détail</a>
+
+    {% if football_match.returnMatches|length > 0 %}
+        <div class="alert alert-warning">
+            <p>
+                Ce match possède un ou plusieurs matchs retour associés.
+                Il ne peut pas être supprimé directement.
+            </p>
+
+            <p>
+                Supprime d'abord le ou les matchs retour associés avant de supprimer ce match.
+            </p>
+        </div>
+    {% else %}
+        {{ include('football_match/_delete_form.html.twig') }}
+    {% endif %}
+{% endblock %}

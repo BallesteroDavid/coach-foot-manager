@@ -38,9 +38,16 @@ class Team
     #[ORM\OneToMany(targetEntity: Player::class, mappedBy: 'team')]
     private Collection $players;
 
+    /**
+     * @var Collection<int, FootballMatch>
+     */
+    #[ORM\OneToMany(targetEntity: FootballMatch::class, mappedBy: 'team')]
+    private Collection $footballMatches;
+
     public function __construct()
     {
         $this->players = new ArrayCollection();
+        $this->footballMatches = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -132,6 +139,36 @@ class Team
             // set the owning side to null (unless already changed)
             if ($player->getTeam() === $this) {
                 $player->setTeam(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, FootballMatch>
+     */
+    public function getFootballMatches(): Collection
+    {
+        return $this->footballMatches;
+    }
+
+    public function addFootballMatch(FootballMatch $footballMatch): static
+    {
+        if (!$this->footballMatches->contains($footballMatch)) {
+            $this->footballMatches->add($footballMatch);
+            $footballMatch->setTeam($this);
+        }
+
+        return $this;
+    }
+
+    public function removeFootballMatch(FootballMatch $footballMatch): static
+    {
+        if ($this->footballMatches->removeElement($footballMatch)) {
+            // set the owning side to null (unless already changed)
+            if ($footballMatch->getTeam() === $this) {
+                $footballMatch->setTeam(null);
             }
         }
 

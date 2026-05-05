@@ -1,0 +1,161 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Détail du match{% endblock %}
+
+{% block body %}
+    <h1>Détail du match</h1>
+
+    {% set locationLabels = {
+        home: 'Domicile',
+        away: 'Extérieur',
+        neutral: 'Terrain neutre'
+    } %}
+
+    {% set statusLabels = {
+        planned: 'Planifié',
+        in_progress: 'En cours',
+        finished: 'Terminé',
+        cancelled: 'Annulé'
+    } %}
+
+    {% set matchTypeLabels = {
+        simple: 'Match simple',
+        aller: 'Match aller',
+        retour: 'Match retour'
+    } %}
+
+    <table class="table">
+        <tbody>
+            <tr>
+                <th>Équipe</th>
+                <td>{{ football_match.team.name }}</td>
+            </tr>
+
+            <tr>
+                <th>Date du match</th>
+                <td>{{ football_match.matchDate ? football_match.matchDate|date('d/m/Y') : '-' }}</td>
+            </tr>
+
+            <tr>
+                <th>Heure du match</th>
+                <td>{{ football_match.startTime ? football_match.startTime|date('H:i') : '-' }}</td>
+            </tr>
+
+            <tr>
+                <th>Adversaire</th>
+                <td>{{ football_match.opponent }}</td>
+            </tr>
+
+            <tr>
+                <th>Lieu</th>
+                <td>{{ football_match.location }}</td>
+            </tr>
+
+            <tr>
+                <th>Type de lieu</th>
+                <td>{{ locationLabels[football_match.locationType]|default(football_match.locationType) }}</td>
+            </tr>
+
+            <tr>
+                <th>Compétition</th>
+                <td>{{ football_match.competition ?: 'Non renseignée' }}</td>
+            </tr>
+
+            <tr>
+                <th>Score</th>
+                <td>{{ football_match.scoreLabel }}</td>
+            </tr>
+
+            <tr>
+                <th>Résultat</th>
+                <td>{{ football_match.resultLabel }}</td>
+            </tr>
+
+            <tr>
+                <th>Total de buts</th>
+                <td>
+                    {% if football_match.totalGoals is not null %}
+                        {{ football_match.totalGoals }}
+                    {% else %}
+                        Non renseigné
+                    {% endif %}
+                </td>
+            </tr>
+
+            <tr>
+                <th>Statut</th>
+                <td>{{ statusLabels[football_match.status]|default(football_match.status) }}</td>
+            </tr>
+
+            <tr>
+                <th>Type de match</th>
+                <td>{{ matchTypeLabels[football_match.matchType]|default(football_match.matchType) }}</td>
+            </tr>
+        </tbody>
+    </table>
+
+    {% if football_match.matchType == 'retour' and football_match.firstMatch %}
+        <h2>Match aller associé</h2>
+
+        <p>
+            Ce match est le retour du match :
+            <strong>
+                {{ football_match.firstMatch.team.name }}
+                vs
+                {{ football_match.firstMatch.opponent }}
+            </strong>
+            du {{ football_match.firstMatch.matchDate|date('d/m/Y') }}.
+        </p>
+
+        <a href="{{ path('app_football_match_show', { id: football_match.firstMatch.id }) }}">
+            Voir le match aller
+        </a>
+    {% endif %}
+
+    {% if football_match.matchType == 'aller' and football_match.returnMatches|length > 0 %}
+        <h2>Match retour associé</h2>
+
+        <ul>
+            {% for returnMatch in football_match.returnMatches %}
+                <li>
+                    <strong>
+                        {{ returnMatch.team.name }}
+                        vs
+                        {{ returnMatch.opponent }}
+                    </strong>
+                    du {{ returnMatch.matchDate|date('d/m/Y') }}
+
+                    <a href="{{ path('app_football_match_show', { id: returnMatch.id }) }}">
+                        Voir le match retour
+                    </a>
+                </li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+
+    {% if football_match.matchType == 'aller' and football_match.returnMatches|length == 0 %}
+        <p>
+            <a href="{{ path('app_football_match_new_return', { id: football_match.id }) }}">
+                Créer le match retour
+            </a>
+        </p>
+    {% endif %}
+
+    <a href="{{ path('app_football_match_index') }}">Retour à la liste</a>
+    <a href="{{ path('app_football_match_edit', { id: football_match.id }) }}">Modifier</a>
+
+    {% if football_match.returnMatches|length > 0 %}
+        <div class="alert alert-warning">
+            <p>
+                Ce match possède un ou plusieurs matchs retour associés.
+                Il ne peut pas être supprimé directement.
+            </p>
+
+            <p>
+                Supprime d'abord le ou les matchs retour associés avant de supprimer ce match.
+            </p>
+        </div>
+    {% else %}
+        {{ include('football_match/_delete_form.html.twig') }}
+    {% endif %}
+{% endblock %}

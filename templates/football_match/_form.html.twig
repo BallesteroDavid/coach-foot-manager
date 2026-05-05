@@ -1,0 +1,95 @@
+{{ form_start(form) }}
+
+    {{ form_errors(form) }}
+
+    <div>
+        {{ form_label(form.team) }}
+        {{ form_widget(form.team) }}
+        {{ form_errors(form.team) }}
+        {{ form_help(form.team) }}
+    </div>
+
+    <div>
+        {{ form_label(form.matchDate) }}
+        {{ form_widget(form.matchDate) }}
+        {{ form_errors(form.matchDate) }}
+        {{ form_help(form.matchDate) }}
+    </div>
+
+    <div>
+        {{ form_label(form.startTime) }}
+        {{ form_widget(form.startTime) }}
+        {{ form_errors(form.startTime) }}
+        {{ form_help(form.startTime) }}
+    </div>
+
+    <div>
+        {{ form_label(form.opponent) }}
+        {{ form_widget(form.opponent) }}
+        {{ form_errors(form.opponent) }}
+        {{ form_help(form.opponent) }}
+    </div>
+
+    <div>
+        {{ form_label(form.location) }}
+        {{ form_widget(form.location) }}
+        {{ form_errors(form.location) }}
+        {{ form_help(form.location) }}
+    </div>
+
+    <div>
+        {{ form_label(form.locationType) }}
+        {{ form_widget(form.locationType) }}
+        {{ form_errors(form.locationType) }}
+        {{ form_help(form.locationType) }}
+    </div>
+
+    <div>
+        {{ form_label(form.competition) }}
+        {{ form_widget(form.competition) }}
+        {{ form_errors(form.competition) }}
+        {{ form_help(form.competition) }}
+    </div>
+
+    <div>
+        {{ form_label(form.status) }}
+        {{ form_widget(form.status) }}
+        {{ form_errors(form.status) }}
+        {{ form_help(form.status) }}
+    </div>
+
+    {% if form.matchType is defined %}
+        <div>
+            {{ form_label(form.matchType) }}
+            {{ form_widget(form.matchType) }}
+            {{ form_errors(form.matchType) }}
+            {{ form_help(form.matchType) }}
+        </div>
+    {% endif %}
+
+    {% if form.firstMatch is defined %}
+        <div>
+            {{ form_label(form.firstMatch) }}
+            {{ form_widget(form.firstMatch) }}
+            {{ form_errors(form.firstMatch) }}
+            {{ form_help(form.firstMatch) }}
+        </div>
+    {% endif %}
+
+    <div>
+        {{ form_label(form.homeScore) }}
+        {{ form_widget(form.homeScore) }}
+        {{ form_errors(form.homeScore) }}
+        {{ form_help(form.homeScore) }}
+    </div>
+
+    <div>
+        {{ form_label(form.awayScore) }}
+        {{ form_widget(form.awayScore) }}
+        {{ form_errors(form.awayScore) }}
+        {{ form_help(form.awayScore) }}
+    </div>
+
+    <button class="btn">{{ button_label|default('Enregistrer') }}</button>
+
+{{ form_end(form) }}

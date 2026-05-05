@@ -1,0 +1,43 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}
+    {% if is_return_creation %}
+        Créer le match retour
+    {% else %}
+        Créer un match
+    {% endif %}
+{% endblock %}
+
+{% block body %}
+    {% if is_return_creation %}
+        <h1>Créer le match retour</h1>
+
+        <div class="alert alert-info">
+            <p>
+                Tu es en train de créer le match retour du match :
+                <strong>
+                    {{ first_match.team.name }}
+                    vs
+                    {{ first_match.opponent }}
+                </strong>
+                du {{ first_match.matchDate|date('d/m/Y') }}.
+            </p>
+
+            <p>
+                Le type de match et le match aller associé sont déjà renseignés automatiquement.
+            </p>
+        </div>
+    {% else %}
+        <h1>Créer un match</h1>
+    {% endif %}
+
+    {{ include('football_match/_form.html.twig') }}
+
+    <a href="{{ path('app_football_match_index') }}">Retour à la liste</a>
+
+    {% if is_return_creation %}
+        <a href="{{ path('app_football_match_show', { id: first_match.id }) }}">
+            Retour au match aller
+        </a>
+    {% endif %}
+{% endblock %}
