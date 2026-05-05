@@ -1,0 +1,55 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Catégories{% endblock %}
+
+{% block body %}
+    <h1>Liste des catégories</h1>
+
+    <a href="{{ path('app_category_new') }}">Créer une catégorie</a>
+
+    {% if categories is empty %}
+        <p>Aucune catégorie enregistrée.</p>
+    {% else %}
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Nom</th>
+                    <th>Club</th>
+                    <th>Âge minimum</th>
+                    <th>Âge maximum</th>
+                    <th>Équipes</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for category in categories %}
+                    <tr>
+                        <td>{{ category.name }}</td>
+
+                        <td>
+                            {{ category.club ? category.club.name : 'Aucun club' }}
+                        </td>
+
+                        <td>
+                            {{ category.ageMin is not null ? category.ageMin : '-' }}
+                        </td>
+
+                        <td>
+                            {{ category.ageMax is not null ? category.ageMax : '-' }}
+                        </td>
+
+                        <td>
+                            {{ category.teamsCount }}
+                        </td>
+
+                        <td>
+                            <a href="{{ path('app_category_show', { id: category.id }) }}">Voir</a>
+                            <a href="{{ path('app_category_edit', { id: category.id }) }}">Modifier</a>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endif %}
+{% endblock %}

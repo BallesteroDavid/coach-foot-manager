@@ -8,6 +8,7 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
+use Symfony\Component\Validator\Context\ExecutionContextInterface;
 
 #[ORM\Entity(repositoryClass: TeamRepository::class)]
 class Team
@@ -55,6 +56,12 @@ class Team
     #[ORM\OneToMany(targetEntity: FootballMatch::class, mappedBy: 'team')]
     private Collection $footballMatches;
 
+    #[ORM\ManyToOne(inversedBy: 'teams')]
+    private ?Category $category = null;
+
+    #[ORM\ManyToOne(inversedBy: 'teams')]
+    private ?Season $season = null;
+
     public function __construct()
     {
         // date de création automatiquement renseignée à la création de l'équipe
@@ -95,6 +102,32 @@ class Team
     public function getFootballMatchesCount(): int
     {
         return $this->footballMatches->count();
+    }
+
+    #[Assert\Callback]
+    public function validateRelationsBelongToSameClub(ExecutionContextInterface $context): void
+    {
+        // Si une catégorie est choisie, elle doit appartenir au même club que l'équipe.
+        if (
+            $this->category !== null
+            && $this->club !== null
+            && $this->category->getClub() !== $this->club
+        ) {
+            $context->buildViolation("La catégorie choisie doit appartenir au même club que l'équipe.")
+                ->atPath('category')
+                ->addViolation();
+        }
+
+        // Si une saison est choisie, elle doit appartenir au même club que l'équipe.
+        if (
+            $this->season !== null
+            && $this->club !== null
+            && $this->season->getClub() !== $this->club
+        ) {
+            $context->buildViolation("La saison choisie doit appartenir au même club que l'équipe.")
+                ->atPath('season')
+                ->addViolation();
+        }
     }
 
     public function getDescription(): ?string
@@ -201,6 +234,30 @@ class Team
                 $footballMatch->setTeam(null);
             }
         }
+
+        return $this;
+    }
+
+    public function getCategory(): ?Category
+    {
+        return $this->category;
+    }
+
+    public function setCategory(?Category $category): static
+    {
+        $this->category = $category;
+
+        return $this;
+    }
+
+    public function getSeason(): ?Season
+    {
+        return $this->season;
+    }
+
+    public function setSeason(?Season $season): static
+    {
+        $this->season = $season;
 
         return $this;
     }

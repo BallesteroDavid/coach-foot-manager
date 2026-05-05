@@ -1,43 +1,56 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Club index{% endblock %}
+{% block title %}Clubs{% endblock %}
 
 {% block body %}
-    <h1>Club index</h1>
+    <h1>Liste des clubs</h1>
 
-    <table class="table">
-        <thead>
-            <tr>
-                <th>Id</th>
-                <th>Name</th>
-                <th>City</th>
-                <th>Address</th>
-                <th>Email</th>
-                <th>Phone</th>
-                <th>actions</th>
-            </tr>
-        </thead>
-        <tbody>
-        {% for club in clubs %}
-            <tr>
-                <td>{{ club.id }}</td>
-                <td>{{ club.name }}</td>
-                <td>{{ club.city }}</td>
-                <td>{{ club.address }}</td>
-                <td>{{ club.email }}</td>
-                <td>{{ club.phone }}</td>
-                <td>
-                    <a href="{{ path('app_club_show', {'id': club.id}) }}">show</a>
-                    <a href="{{ path('app_club_edit', {'id': club.id}) }}">edit</a>
-                </td>
-            </tr>
-        {% else %}
-            <tr>
-                <td colspan="7">no records found</td>
-            </tr>
-        {% endfor %}
-        </tbody>
-    </table>
+    <a href="{{ path('app_club_new') }}">Créer un club</a>
 
-    <a href="{{ path('app_club_new') }}">Create new</a>
+    {% if clubs is empty %}
+        <p>Aucun club enregistré.</p>
+    {% else %}
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Nom</th>
+                    <th>Ville</th>
+                    <th>Email</th>
+                    <th>Téléphone</th>
+                    <th>Utilisateurs</th>
+                    <th>Équipes</th>
+                    <th>Catégories</th>
+                    <th>Saisons</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for club in clubs %}
+                    <tr>
+                        <td>{{ club.name }}</td>
+
+                        <td>{{ club.city ?: 'Non renseignée' }}</td>
+
+                        <td>{{ club.email ?: '-' }}</td>
+
+                        <td>{{ club.phone ?: '-' }}</td>
+
+                        <td>{{ club.appUsersCount }}</td>
+
+                        <td>{{ club.teamsCount }}</td>
+
+                        <td>{{ club.categoriesCount }}</td>
+
+                        <td>{{ club.seasonsCount }}</td>
+
+                        <td>
+                            <a href="{{ path('app_club_show', { id: club.id }) }}">Voir</a>
+                            <a href="{{ path('app_club_edit', { id: club.id }) }}">Modifier</a>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endif %}
 {% endblock %}

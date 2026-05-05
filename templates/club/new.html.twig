@@ -1,11 +1,13 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}New Club{% endblock %}
+{% block title %}Créer un club{% endblock %}
 
 {% block body %}
-    <h1>Create new Club</h1>
+    <h1>Créer un club</h1>
 
-    {{ include('club/_form.html.twig') }}
+    {{ include('club/_form.html.twig', {
+        button_label: 'Créer le club'
+    }) }}
 
-    <a href="{{ path('app_club_index') }}">back to list</a>
+    <a href="{{ path('app_club_index') }}">Retour à la liste</a>
 {% endblock %}

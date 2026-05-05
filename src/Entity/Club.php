@@ -6,6 +6,7 @@ use App\Repository\ClubRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: ClubRepository::class)]
 class Club
@@ -16,18 +17,36 @@ class Club
     private ?int $id = null;
 
     #[ORM\Column(length: 150)]
+    #[Assert\NotBlank(message: 'Le nom du club est obligatoire.')]
+    #[Assert\Length(
+        max: 150,
+        maxMessage: 'Le nom du club ne peut pas dépasser {{ limit }} caractères.'
+    )]
     private ?string $name = null;
 
     #[ORM\Column(length: 100, nullable: true)]
+    #[Assert\Length(
+        max: 100,
+        maxMessage: 'La ville ne peut pas dépasser {{ limit }} caractères.'
+    )]
     private ?string $city = null;
 
     #[ORM\Column(length: 255, nullable: true)]
+    #[Assert\Length(
+        max: 255,
+        maxMessage: "L'adresse ne peut pas dépasser {{ limit }} caractères."
+    )]
     private ?string $address = null;
 
     #[ORM\Column(length: 180, nullable: true)]
+    #[Assert\Email(message: "L'adresse email du club n'est pas valide.")]
     private ?string $email = null;
 
     #[ORM\Column(length: 30, nullable: true)]
+    #[Assert\Length(
+        max: 30,
+        maxMessage: 'Le téléphone ne peut pas dépasser {{ limit }} caractères.'
+    )]
     private ?string $phone = null;
 
     /**
@@ -42,10 +61,49 @@ class Club
     #[ORM\OneToMany(targetEntity: Team::class, mappedBy: 'club')]
     private Collection $teams;
 
+    /**
+     * @var Collection<int, Category>
+     */
+    #[ORM\OneToMany(targetEntity: Category::class, mappedBy: 'club')]
+    private Collection $categories;
+
+    /**
+     * @var Collection<int, Season>
+     */
+    #[ORM\OneToMany(targetEntity: Season::class, mappedBy: 'club')]
+    private Collection $seasons;
+
     public function __construct()
     {
         $this->appUsers = new ArrayCollection();
         $this->teams = new ArrayCollection();
+        $this->categories = new ArrayCollection();
+        $this->seasons = new ArrayCollection();
+    }
+
+    public function __toString(): string
+    {
+        return $this->name ?? '';
+    }
+
+    public function getAppUsersCount(): int
+    {
+        return $this->appUsers->count();
+    }
+
+    public function getTeamsCount(): int
+    {
+        return $this->teams->count();
+    }
+
+    public function getCategoriesCount(): int
+    {
+        return $this->categories->count();
+    }
+
+    public function getSeasonsCount(): int
+    {
+        return $this->seasons->count();
     }
 
     public function getId(): ?int
@@ -134,7 +192,6 @@ class Club
     public function removeAppUser(AppUser $appUser): static
     {
         if ($this->appUsers->removeElement($appUser)) {
-            // set the owning side to null (unless already changed)
             if ($appUser->getClub() === $this) {
                 $appUser->setClub(null);
             }
@@ -164,9 +221,66 @@ class Club
     public function removeTeam(Team $team): static
     {
         if ($this->teams->removeElement($team)) {
-            // set the owning side to null (unless already changed)
             if ($team->getClub() === $this) {
                 $team->setClub(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Category>
+     */
+    public function getCategories(): Collection
+    {
+        return $this->categories;
+    }
+
+    public function addCategory(Category $category): static
+    {
+        if (!$this->categories->contains($category)) {
+            $this->categories->add($category);
+            $category->setClub($this);
+        }
+
+        return $this;
+    }
+
+    public function removeCategory(Category $category): static
+    {
+        if ($this->categories->removeElement($category)) {
+            if ($category->getClub() === $this) {
+                $category->setClub(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Season>
+     */
+    public function getSeasons(): Collection
+    {
+        return $this->seasons;
+    }
+
+    public function addSeason(Season $season): static
+    {
+        if (!$this->seasons->contains($season)) {
+            $this->seasons->add($season);
+            $season->setClub($this);
+        }
+
+        return $this;
+    }
+
+    public function removeSeason(Season $season): static
+    {
+        if ($this->seasons->removeElement($season)) {
+            if ($season->getClub() === $this) {
+                $season->setClub(null);
             }
         }
 

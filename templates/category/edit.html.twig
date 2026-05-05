@@ -1,0 +1,29 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Modifier la catégorie{% endblock %}
+
+{% block body %}
+    <h1>Modifier la catégorie</h1>
+
+    {{ include('category/_form.html.twig', {
+        button_label: 'Mettre à jour la catégorie'
+    }) }}
+
+    <a href="{{ path('app_category_index') }}">Retour à la liste</a>
+    <a href="{{ path('app_category_show', { id: category.id }) }}">Retour au détail</a>
+
+    {% if category.teamsCount > 0 %}
+        <div class="alert alert-warning">
+            <p>
+                Cette catégorie possède déjà une ou plusieurs équipes associées.
+                Elle ne peut pas être supprimée directement.
+            </p>
+
+            <p>
+                Retire d'abord les équipes de cette catégorie avant de la supprimer.
+            </p>
+        </div>
+    {% else %}
+        {{ include('category/_delete_form.html.twig') }}
+    {% endif %}
+{% endblock %}

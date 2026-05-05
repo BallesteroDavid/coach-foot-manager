@@ -1,0 +1,29 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Modifier la saison{% endblock %}
+
+{% block body %}
+    <h1>Modifier la saison</h1>
+
+    {{ include('season/_form.html.twig', {
+        button_label: 'Mettre à jour la saison'
+    }) }}
+
+    <a href="{{ path('app_season_index') }}">Retour à la liste</a>
+    <a href="{{ path('app_season_show', { id: season.id }) }}">Retour au détail</a>
+
+    {% if season.teamsCount > 0 %}
+        <div class="alert alert-warning">
+            <p>
+                Cette saison possède déjà une ou plusieurs équipes associées.
+                Elle ne peut pas être supprimée directement.
+            </p>
+
+            <p>
+                Retire d'abord les équipes de cette saison avant de la supprimer.
+            </p>
+        </div>
+    {% else %}
+        {{ include('season/_delete_form.html.twig') }}
+    {% endif %}
+{% endblock %}

@@ -1,0 +1,78 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Détail de la catégorie{% endblock %}
+
+{% block body %}
+    <h1>Détail de la catégorie</h1>
+
+    <table class="table">
+        <tbody>
+            <tr>
+                <th>Nom</th>
+                <td>{{ category.name }}</td>
+            </tr>
+
+            <tr>
+                <th>Club</th>
+                <td>{{ category.club ? category.club.name : 'Aucun club' }}</td>
+            </tr>
+
+            <tr>
+                <th>Âge minimum</th>
+                <td>{{ category.ageMin is not null ? category.ageMin : 'Non renseigné' }}</td>
+            </tr>
+
+            <tr>
+                <th>Âge maximum</th>
+                <td>{{ category.ageMax is not null ? category.ageMax : 'Non renseigné' }}</td>
+            </tr>
+
+            <tr>
+                <th>Nombre d’équipes</th>
+                <td>{{ category.teamsCount }}</td>
+            </tr>
+
+            <tr>
+                <th>Créée le</th>
+                <td>{{ category.createdAt ? category.createdAt|date('d/m/Y H:i') : '-' }}</td>
+            </tr>
+
+            <tr>
+                <th>Modifiée le</th>
+                <td>{{ category.updatedAt ? category.updatedAt|date('d/m/Y H:i') : '-' }}</td>
+            </tr>
+        </tbody>
+    </table>
+
+    {% if category.teams|length > 0 %}
+        <h2>Équipes associées</h2>
+
+        <ul>
+            {% for team in category.teams %}
+                <li>
+                    <a href="{{ path('app_team_show', { id: team.id }) }}">
+                        {{ team.name }}
+                    </a>
+                </li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+
+    <a href="{{ path('app_category_index') }}">Retour à la liste</a>
+    <a href="{{ path('app_category_edit', { id: category.id }) }}">Modifier</a>
+
+    {% if category.teamsCount > 0 %}
+        <div class="alert alert-warning">
+            <p>
+                Cette catégorie possède déjà une ou plusieurs équipes associées.
+                Elle ne peut pas être supprimée directement.
+            </p>
+
+            <p>
+                Retire d'abord les équipes de cette catégorie avant de la supprimer.
+            </p>
+        </div>
+    {% else %}
+        {{ include('category/_delete_form.html.twig') }}
+    {% endif %}
+{% endblock %}

@@ -18,7 +18,9 @@ final class ClubController extends AbstractController
     public function index(ClubRepository $clubRepository): Response
     {
         return $this->render('club/index.html.twig', [
-            'clubs' => $clubRepository->findAll(),
+            'clubs' => $clubRepository->findBy([], [
+                'name' => 'ASC',
+            ]),
         ]);
     }
 
@@ -32,6 +34,8 @@ final class ClubController extends AbstractController
         if ($form->isSubmitted() && $form->isValid()) {
             $entityManager->persist($club);
             $entityManager->flush();
+
+            $this->addFlash('success', 'Le club a bien été créé.');
 
             return $this->redirectToRoute('app_club_index', [], Response::HTTP_SEE_OTHER);
         }
@@ -59,6 +63,8 @@ final class ClubController extends AbstractController
         if ($form->isSubmitted() && $form->isValid()) {
             $entityManager->flush();
 
+            $this->addFlash('success', 'Le club a bien été modifié.');
+
             return $this->redirectToRoute('app_club_index', [], Response::HTTP_SEE_OTHER);
         }
 
@@ -72,8 +78,26 @@ final class ClubController extends AbstractController
     public function delete(Request $request, Club $club, EntityManagerInterface $entityManager): Response
     {
         if ($this->isCsrfTokenValid('delete'.$club->getId(), $request->getPayload()->getString('_token'))) {
+            if (
+                $club->getAppUsersCount() > 0
+                || $club->getTeamsCount() > 0
+                || $club->getCategoriesCount() > 0
+                || $club->getSeasonsCount() > 0
+            ) {
+                $this->addFlash(
+                    'danger',
+                    'Impossible de supprimer ce club : des utilisateurs, équipes, catégories ou saisons y sont associés.'
+                );
+
+                return $this->redirectToRoute('app_club_show', [
+                    'id' => $club->getId(),
+                ], Response::HTTP_SEE_OTHER);
+            }
+
             $entityManager->remove($club);
             $entityManager->flush();
+
+            $this->addFlash('success', 'Le club a bien été supprimé.');
         }
 
         return $this->redirectToRoute('app_club_index', [], Response::HTTP_SEE_OTHER);

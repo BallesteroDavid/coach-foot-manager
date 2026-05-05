@@ -18,6 +18,22 @@
             </tr>
 
             <tr>
+                <th>Catégorie</th>
+                <td>{{ team.category ? team.category.name : 'Aucune catégorie' }}</td>
+            </tr>
+
+            <tr>
+                <th>Saison</th>
+                <td>
+                    {% if team.season %}
+                        {{ team.season.name }} — {{ team.season.periodLabel }}
+                    {% else %}
+                        Aucune saison
+                    {% endif %}
+                </td>
+            </tr>
+
+            <tr>
                 <th>Description</th>
                 <td>{{ team.description ?: 'Non renseignée' }}</td>
             </tr>

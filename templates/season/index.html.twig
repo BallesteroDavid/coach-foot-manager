@@ -1,0 +1,57 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Saisons{% endblock %}
+
+{% block body %}
+    <h1>Liste des saisons</h1>
+
+    <a href="{{ path('app_season_new') }}">Créer une saison</a>
+
+    {% set statusLabels = {
+        planned: 'Planifiée',
+        active: 'Active',
+        closed: 'Clôturée'
+    } %}
+
+    {% if seasons is empty %}
+        <p>Aucune saison enregistrée.</p>
+    {% else %}
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Nom</th>
+                    <th>Club</th>
+                    <th>Période</th>
+                    <th>Statut</th>
+                    <th>Équipes</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for season in seasons %}
+                    <tr>
+                        <td>{{ season.name }}</td>
+
+                        <td>
+                            {{ season.club ? season.club.name : 'Aucun club' }}
+                        </td>
+
+                        <td>{{ season.periodLabel }}</td>
+
+                        <td>
+                            {{ statusLabels[season.status]|default(season.status) }}
+                        </td>
+
+                        <td>{{ season.teamsCount }}</td>
+
+                        <td>
+                            <a href="{{ path('app_season_show', { id: season.id }) }}">Voir</a>
+                            <a href="{{ path('app_season_edit', { id: season.id }) }}">Modifier</a>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endif %}
+{% endblock %}

@@ -4,6 +4,8 @@ namespace App\Form;
 
 use App\Entity\Club;
 use App\Entity\Team;
+use App\Entity\Category;
+use App\Entity\Season;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\TextareaType;
@@ -30,6 +32,24 @@ class TeamType extends AbstractType
                 'choice_label' => 'name',
                 'placeholder' => 'Choisir un club',
                 'label' => 'Club',
+            ])
+
+            ->add('category', EntityType::class, [
+                'class' => Category::class,
+                'choice_label' => 'name',
+                'placeholder' => 'Choisir une catégorie',
+                'required' => false,
+                'label' => 'Catégorie',
+                'help' => 'Optionnel : permet de classer l’équipe par catégorie d’âge.',
+            ])
+
+            ->add('season', EntityType::class, [
+                'class' => Season::class,
+                'choice_label' => 'name',
+                'placeholder' => 'Choisir une saison',
+                'required' => false,
+                'label' => 'Saison',
+                'help' => 'Optionnel pour l’instant : permet de rattacher l’équipe à une saison sportive.',
             ])
         ;
     }

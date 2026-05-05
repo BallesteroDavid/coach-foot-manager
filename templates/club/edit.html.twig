@@ -1,13 +1,29 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Edit Club{% endblock %}
+{% block title %}Modifier le club{% endblock %}
 
 {% block body %}
-    <h1>Edit Club</h1>
+    <h1>Modifier le club</h1>
 
-    {{ include('club/_form.html.twig', {'button_label': 'Update'}) }}
+    {{ include('club/_form.html.twig', {
+        button_label: 'Mettre à jour le club'
+    }) }}
 
-    <a href="{{ path('app_club_index') }}">back to list</a>
+    <a href="{{ path('app_club_index') }}">Retour à la liste</a>
+    <a href="{{ path('app_club_show', { id: club.id }) }}">Retour au détail</a>
 
-    {{ include('club/_delete_form.html.twig') }}
+    {% if club.appUsersCount > 0 or club.teamsCount > 0 or club.categoriesCount > 0 or club.seasonsCount > 0 %}
+        <div class="alert alert-warning">
+            <p>
+                Ce club possède déjà des utilisateurs, équipes, catégories ou saisons associés.
+                Il ne peut pas être supprimé directement.
+            </p>
+
+            <p>
+                Retire d'abord les éléments liés avant de supprimer ce club.
+            </p>
+        </div>
+    {% else %}
+        {{ include('club/_delete_form.html.twig') }}
+    {% endif %}
 {% endblock %}

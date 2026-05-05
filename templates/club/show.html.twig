@@ -1,42 +1,74 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Club{% endblock %}
+{% block title %}Détail du club{% endblock %}
 
 {% block body %}
-    <h1>Club</h1>
+    <h1>Détail du club</h1>
 
     <table class="table">
         <tbody>
             <tr>
-                <th>Id</th>
-                <td>{{ club.id }}</td>
-            </tr>
-            <tr>
-                <th>Name</th>
+                <th>Nom</th>
                 <td>{{ club.name }}</td>
             </tr>
+
             <tr>
-                <th>City</th>
-                <td>{{ club.city }}</td>
+                <th>Ville</th>
+                <td>{{ club.city ?: 'Non renseignée' }}</td>
             </tr>
+
             <tr>
-                <th>Address</th>
-                <td>{{ club.address }}</td>
+                <th>Adresse</th>
+                <td>{{ club.address ?: 'Non renseignée' }}</td>
             </tr>
+
             <tr>
                 <th>Email</th>
-                <td>{{ club.email }}</td>
+                <td>{{ club.email ?: 'Non renseigné' }}</td>
             </tr>
+
             <tr>
-                <th>Phone</th>
-                <td>{{ club.phone }}</td>
+                <th>Téléphone</th>
+                <td>{{ club.phone ?: 'Non renseigné' }}</td>
+            </tr>
+
+            <tr>
+                <th>Utilisateurs</th>
+                <td>{{ club.appUsersCount }}</td>
+            </tr>
+
+            <tr>
+                <th>Équipes</th>
+                <td>{{ club.teamsCount }}</td>
+            </tr>
+
+            <tr>
+                <th>Catégories</th>
+                <td>{{ club.categoriesCount }}</td>
+            </tr>
+
+            <tr>
+                <th>Saisons</th>
+                <td>{{ club.seasonsCount }}</td>
             </tr>
         </tbody>
     </table>
 
-    <a href="{{ path('app_club_index') }}">back to list</a>
+    <a href="{{ path('app_club_index') }}">Retour à la liste</a>
+    <a href="{{ path('app_club_edit', { id: club.id }) }}">Modifier</a>
 
-    <a href="{{ path('app_club_edit', {'id': club.id}) }}">edit</a>
+    {% if club.appUsersCount > 0 or club.teamsCount > 0 or club.categoriesCount > 0 or club.seasonsCount > 0 %}
+        <div class="alert alert-warning">
+            <p>
+                Ce club possède déjà des utilisateurs, équipes, catégories ou saisons associés.
+                Il ne peut pas être supprimé directement.
+            </p>
 
-    {{ include('club/_delete_form.html.twig') }}
+            <p>
+                Retire d'abord les éléments liés avant de supprimer ce club.
+            </p>
+        </div>
+    {% else %}
+        {{ include('club/_delete_form.html.twig') }}
+    {% endif %}
 {% endblock %}
