@@ -51,6 +51,14 @@
             </tr>
 
             <tr>
+                <th>Présences renseignées</th>
+                <td>
+                    {{ training_session.attendancesCount }}
+                    dont {{ training_session.presentAttendancesCount }} présent(s)
+                </td>
+            </tr>
+
+            <tr>
                 <th>Créé par</th>
                 <td>{{ training_session.createdBy ? training_session.createdBy.fullName : 'Non renseigné' }}</td>
             </tr>
@@ -67,6 +75,63 @@
         </tbody>
     </table>
 
+    <h2>Présences</h2>
+
+    <p>
+        <a href="{{ path('app_training_attendance_new_from_session', { id: training_session.id }) }}">
+            Ajouter une présence
+        </a>
+    </p>
+
+    {{ include('training_attendance/_mark_all_present_form.html.twig', {
+        training_session: training_session
+    }) }}
+
+    {% if training_session.attendances|length > 0 %}
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Joueur</th>
+                    <th>Statut</th>
+                    <th>Commentaire</th>
+                    <th>Modifié par</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for attendance in training_session.attendances %}
+                    <tr>
+                        <td>
+                            {% if attendance.player %}
+                                <a href="{{ path('app_player_show', { id: attendance.player.id }) }}">
+                                    {{ attendance.player.fullName }}
+                                </a>
+                            {% else %}
+                                Joueur inconnu
+                            {% endif %}
+                        </td>
+
+                        <td>{{ attendance.statusLabel }}</td>
+
+                        <td>{{ attendance.comment ?: '-' }}</td>
+
+                        <td>
+                            {{ attendance.updatedBy ? attendance.updatedBy.fullName : 'Non renseigné' }}
+                        </td>
+
+                        <td>
+                            <a href="{{ path('app_training_attendance_show', { id: attendance.id }) }}">Voir</a>
+                            <a href="{{ path('app_training_attendance_edit', { id: attendance.id }) }}">Modifier</a>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>Aucune présence renseignée pour cet entraînement.</p>
+    {% endif %}
+
     <a href="{{ path('app_training_session_index') }}">Retour à la liste</a>
 
     {% if training_session.team %}
@@ -75,5 +140,18 @@
 
     <a href="{{ path('app_training_session_edit', { id: training_session.id }) }}">Modifier</a>
 
-    {{ include('training_session/_delete_form.html.twig') }}
+    {% if training_session.attendances|length > 0 %}
+        <div class="alert alert-warning">
+            <p>
+                Cet entraînement possède déjà des présences renseignées.
+                Il ne peut pas être supprimé directement.
+            </p>
+
+            <p>
+                Supprime d'abord les présences liées avant de supprimer cet entraînement.
+            </p>
+        </div>
+    {% else %}
+        {{ include('training_session/_delete_form.html.twig') }}
+    {% endif %}
 {% endblock %}

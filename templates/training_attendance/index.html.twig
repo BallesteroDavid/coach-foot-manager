@@ -1,0 +1,72 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Présences aux entraînements{% endblock %}
+
+{% block body %}
+    <h1>Liste des présences aux entraînements</h1>
+
+    <a href="{{ path('app_training_attendance_new') }}">Créer une présence</a>
+
+    {% if training_attendances is empty %}
+        <p>Aucune présence enregistrée.</p>
+    {% else %}
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Entraînement</th>
+                    <th>Joueur</th>
+                    <th>Statut</th>
+                    <th>Commentaire</th>
+                    <th>Modifié par</th>
+                    <th>Créée le</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for training_attendance in training_attendances %}
+                    <tr>
+                        <td>
+                            {% if training_attendance.trainingSession %}
+                                {{ training_attendance.trainingSession.trainingDate ? training_attendance.trainingSession.trainingDate|date('d/m/Y') : '-' }}
+                                —
+                                {{ training_attendance.trainingSession.team ? training_attendance.trainingSession.team.name : 'Équipe inconnue' }}
+                                —
+                                {{ training_attendance.trainingSession.timeRangeLabel }}
+                            {% else %}
+                                Entraînement inconnu
+                            {% endif %}
+                        </td>
+
+                        <td>
+                            {% if training_attendance.player %}
+                                <a href="{{ path('app_player_show', { id: training_attendance.player.id }) }}">
+                                    {{ training_attendance.player.fullName }}
+                                </a>
+                            {% else %}
+                                Joueur inconnu
+                            {% endif %}
+                        </td>
+
+                        <td>{{ training_attendance.statusLabel }}</td>
+
+                        <td>{{ training_attendance.comment ?: '-' }}</td>
+
+                        <td>
+                            {{ training_attendance.updatedBy ? training_attendance.updatedBy.fullName : 'Non renseigné' }}
+                        </td>
+
+                        <td>
+                            {{ training_attendance.createdAt ? training_attendance.createdAt|date('d/m/Y H:i') : '-' }}
+                        </td>
+
+                        <td>
+                            <a href="{{ path('app_training_attendance_show', { id: training_attendance.id }) }}">Voir</a>
+                            <a href="{{ path('app_training_attendance_edit', { id: training_attendance.id }) }}">Modifier</a>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endif %}
+{% endblock %}

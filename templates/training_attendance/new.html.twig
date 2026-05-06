@@ -1,0 +1,32 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Créer une présence{% endblock %}
+
+{% block body %}
+    <h1>Créer une présence</h1>
+
+    {% if training_session is defined and training_session %}
+        <p>
+            Entraînement :
+            <strong>
+                {{ training_session.team ? training_session.team.name : 'Équipe inconnue' }}
+            </strong>
+            —
+            {{ training_session.trainingDate ? training_session.trainingDate|date('d/m/Y') : '-' }}
+            —
+            {{ training_session.timeRangeLabel }}
+        </p>
+    {% endif %}
+
+    {{ include('training_attendance/_form.html.twig', {
+        button_label: 'Créer la présence'
+    }) }}
+
+    {% if training_session is defined and training_session %}
+        <a href="{{ path('app_training_session_show', { id: training_session.id }) }}">
+            Retour à l'entraînement
+        </a>
+    {% else %}
+        <a href="{{ path('app_training_attendance_index') }}">Retour à la liste</a>
+    {% endif %}
+{% endblock %}

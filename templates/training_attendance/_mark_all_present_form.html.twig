@@ -1,0 +1,7 @@
+<form method="post" action="{{ path('app_training_attendance_mark_all_present', { id: training_session.id }) }}" onsubmit="return confirm('Voulez-vous marquer tous les joueurs de cette équipe comme présents ?');">
+    <input type="hidden" name="_token" value="{{ csrf_token('mark_all_present' ~ training_session.id) }}">
+
+    <button class="btn" type="submit">
+        Marquer tous les joueurs présents
+    </button>
+</form>

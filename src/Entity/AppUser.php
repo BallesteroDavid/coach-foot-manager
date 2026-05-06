@@ -78,11 +78,18 @@ class AppUser implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\OneToMany(targetEntity: TrainingSession::class, mappedBy: 'createdBy')]
     private Collection $createdTrainingSessions;
 
+    /**
+     * @var Collection<int, TrainingAttendance>
+     */
+    #[ORM\OneToMany(targetEntity: TrainingAttendance::class, mappedBy: 'updatedBy')]
+    private Collection $updatedTrainingAttendances;
+
     public function __construct()
     {
         $this->coachedTeams = new ArrayCollection();
         $this->createdConvocations = new ArrayCollection();
         $this->createdTrainingSessions = new ArrayCollection();
+        $this->updatedTrainingAttendances = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -315,6 +322,36 @@ class AppUser implements UserInterface, PasswordAuthenticatedUserInterface
             // set the owning side to null (unless already changed)
             if ($createdTrainingSession->getCreatedBy() === $this) {
                 $createdTrainingSession->setCreatedBy(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, TrainingAttendance>
+     */
+    public function getUpdatedTrainingAttendances(): Collection
+    {
+        return $this->updatedTrainingAttendances;
+    }
+
+    public function addUpdatedTrainingAttendance(TrainingAttendance $updatedTrainingAttendance): static
+    {
+        if (!$this->updatedTrainingAttendances->contains($updatedTrainingAttendance)) {
+            $this->updatedTrainingAttendances->add($updatedTrainingAttendance);
+            $updatedTrainingAttendance->setUpdatedBy($this);
+        }
+
+        return $this;
+    }
+
+    public function removeUpdatedTrainingAttendance(TrainingAttendance $updatedTrainingAttendance): static
+    {
+        if ($this->updatedTrainingAttendances->removeElement($updatedTrainingAttendance)) {
+            // set the owning side to null (unless already changed)
+            if ($updatedTrainingAttendance->getUpdatedBy() === $this) {
+                $updatedTrainingAttendance->setUpdatedBy(null);
             }
         }
 

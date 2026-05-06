@@ -1,0 +1,76 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Détail de la présence{% endblock %}
+
+{% block body %}
+    <h1>Détail de la présence</h1>
+
+    <table class="table">
+        <tbody>
+            <tr>
+                <th>Entraînement</th>
+                <td>
+                    {% if training_attendance.trainingSession %}
+                        {{ training_attendance.trainingSession.trainingDate ? training_attendance.trainingSession.trainingDate|date('d/m/Y') : '-' }}
+                        —
+                        {{ training_attendance.trainingSession.team ? training_attendance.trainingSession.team.name : 'Équipe inconnue' }}
+                        —
+                        {{ training_attendance.trainingSession.timeRangeLabel }}
+                    {% else %}
+                        Entraînement inconnu
+                    {% endif %}
+                </td>
+            </tr>
+
+            <tr>
+                <th>Joueur</th>
+                <td>
+                    {% if training_attendance.player %}
+                        <a href="{{ path('app_player_show', { id: training_attendance.player.id }) }}">
+                            {{ training_attendance.player.fullName }}
+                        </a>
+                    {% else %}
+                        Joueur inconnu
+                    {% endif %}
+                </td>
+            </tr>
+
+            <tr>
+                <th>Statut</th>
+                <td>{{ training_attendance.statusLabel }}</td>
+            </tr>
+
+            <tr>
+                <th>Commentaire</th>
+                <td>{{ training_attendance.comment ?: 'Aucun commentaire' }}</td>
+            </tr>
+
+            <tr>
+                <th>Modifié par</th>
+                <td>{{ training_attendance.updatedBy ? training_attendance.updatedBy.fullName : 'Non renseigné' }}</td>
+            </tr>
+
+            <tr>
+                <th>Créée le</th>
+                <td>{{ training_attendance.createdAt ? training_attendance.createdAt|date('d/m/Y H:i') : '-' }}</td>
+            </tr>
+
+            <tr>
+                <th>Modifiée le</th>
+                <td>{{ training_attendance.updatedAt ? training_attendance.updatedAt|date('d/m/Y H:i') : '-' }}</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <a href="{{ path('app_training_attendance_index') }}">Retour à la liste</a>
+
+    {% if training_attendance.trainingSession %}
+        <a href="{{ path('app_training_session_show', { id: training_attendance.trainingSession.id }) }}">
+            Retour à l'entraînement
+        </a>
+    {% endif %}
+
+    <a href="{{ path('app_training_attendance_edit', { id: training_attendance.id }) }}">Modifier</a>
+
+    {{ include('training_attendance/_delete_form.html.twig') }}
+{% endblock %}

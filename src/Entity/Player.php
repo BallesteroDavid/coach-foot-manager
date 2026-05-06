@@ -83,11 +83,18 @@ class Player
     #[ORM\OneToMany(targetEntity: Convocation::class, mappedBy: 'player')]
     private Collection $convocations;
 
+    /**
+     * @var Collection<int, TrainingAttendance>
+     */
+    #[ORM\OneToMany(targetEntity: TrainingAttendance::class, mappedBy: 'player')]
+    private Collection $trainingAttendances;
+
     public function __construct()
     {
         $this->createdAt = new \DateTimeImmutable();
         $this->status = 'active';
         $this->convocations = new ArrayCollection();
+        $this->trainingAttendances = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -310,6 +317,41 @@ class Player
             // set the owning side to null (unless already changed)
             if ($convocation->getPlayer() === $this) {
                 $convocation->setPlayer(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, TrainingAttendance>
+     */
+    public function getTrainingAttendances(): Collection
+    {
+        return $this->trainingAttendances;
+    }
+
+    public function getTrainingAttendancesCount(): int
+    {
+        return $this->trainingAttendances->count();
+    }
+
+    public function addTrainingAttendance(TrainingAttendance $trainingAttendance): static
+    {
+        if (!$this->trainingAttendances->contains($trainingAttendance)) {
+            $this->trainingAttendances->add($trainingAttendance);
+            $trainingAttendance->setPlayer($this);
+        }
+
+        return $this;
+    }
+
+    public function removeTrainingAttendance(TrainingAttendance $trainingAttendance): static
+    {
+        if ($this->trainingAttendances->removeElement($trainingAttendance)) {
+            // set the owning side to null (unless already changed)
+            if ($trainingAttendance->getPlayer() === $this) {
+                $trainingAttendance->setPlayer(null);
             }
         }
 

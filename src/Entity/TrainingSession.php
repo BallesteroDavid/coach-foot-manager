@@ -3,6 +3,8 @@
 namespace App\Entity;
 
 use App\Repository\TrainingSessionRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
@@ -64,10 +66,17 @@ class TrainingSession
     #[ORM\Column(nullable: true)]
     private ?\DateTimeImmutable $updatedAt = null;
 
+    /**
+     * @var Collection<int, TrainingAttendance>
+     */
+    #[ORM\OneToMany(targetEntity: TrainingAttendance::class, mappedBy: 'trainingSession')]
+    private Collection $attendances;
+
     public function __construct()
     {
         // Date de création automatiquement renseignée à la création de l'entraînement.
         $this->createdAt = new \DateTimeImmutable();
+        $this->attendances = new ArrayCollection();
     }
 
     public function __toString(): string
@@ -251,6 +260,48 @@ class TrainingSession
     public function setUpdatedAt(?\DateTimeImmutable $updatedAt): static
     {
         $this->updatedAt = $updatedAt;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, TrainingAttendance>
+     */
+    public function getAttendances(): Collection
+    {
+        return $this->attendances;
+    }
+
+    public function getAttendancesCount(): int
+    {
+        return $this->attendances->count();
+    }
+
+    public function getPresentAttendancesCount(): int
+    {
+        return $this->attendances
+            ->filter(fn (TrainingAttendance $attendance) => $attendance->getStatus() === 'present')
+            ->count();
+    }
+
+    public function addAttendance(TrainingAttendance $attendance): static
+    {
+        if (!$this->attendances->contains($attendance)) {
+            $this->attendances->add($attendance);
+            $attendance->setTrainingSession($this);
+        }
+
+        return $this;
+    }
+
+    public function removeAttendance(TrainingAttendance $attendance): static
+    {
+        if ($this->attendances->removeElement($attendance)) {
+            // set the owning side to null (unless already changed)
+            if ($attendance->getTrainingSession() === $this) {
+                $attendance->setTrainingSession(null);
+            }
+        }
 
         return $this;
     }

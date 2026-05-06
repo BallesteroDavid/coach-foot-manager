@@ -1,0 +1,22 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Modifier la présence{% endblock %}
+
+{% block body %}
+    <h1>Modifier la présence</h1>
+
+    {{ include('training_attendance/_form.html.twig', {
+        button_label: 'Mettre à jour la présence'
+    }) }}
+
+    <a href="{{ path('app_training_attendance_index') }}">Retour à la liste</a>
+    <a href="{{ path('app_training_attendance_show', { id: training_attendance.id }) }}">Retour au détail</a>
+
+    {% if training_attendance.trainingSession %}
+        <a href="{{ path('app_training_session_show', { id: training_attendance.trainingSession.id }) }}">
+            Retour à l'entraînement
+        </a>
+    {% endif %}
+
+    {{ include('training_attendance/_delete_form.html.twig') }}
+{% endblock %}
