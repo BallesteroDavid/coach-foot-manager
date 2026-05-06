@@ -1,0 +1,75 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Détail de la convocation{% endblock %}
+
+{% block body %}
+    <h1>Détail de la convocation</h1>
+
+    <table class="table">
+        <tbody>
+            <tr>
+                <th>Match</th>
+                <td>
+                    {% if convocation.footballMatch %}
+                        {{ convocation.footballMatch.matchDate ? convocation.footballMatch.matchDate|date('d/m/Y') : '-' }}
+                        —
+                        {{ convocation.footballMatch.team ? convocation.footballMatch.team.name : 'Équipe inconnue' }}
+                        vs
+                        {{ convocation.footballMatch.opponent }}
+                    {% else %}
+                        Match inconnu
+                    {% endif %}
+                </td>
+            </tr>
+
+            <tr>
+                <th>Joueur</th>
+                <td>
+                    {% if convocation.player %}
+                        <a href="{{ path('app_player_show', { id: convocation.player.id }) }}">
+                            {{ convocation.player.fullName }}
+                        </a>
+                    {% else %}
+                        Joueur inconnu
+                    {% endif %}
+                </td>
+            </tr>
+
+            <tr>
+                <th>Statut</th>
+                <td>{{ convocation.statusLabel }}</td>
+            </tr>
+
+            <tr>
+                <th>Commentaire</th>
+                <td>{{ convocation.comment ?: 'Aucun commentaire' }}</td>
+            </tr>
+
+            <tr>
+                <th>Créée par</th>
+                <td>{{ convocation.createdBy ? convocation.createdBy.fullName : 'Non renseigné' }}</td>
+            </tr>
+
+            <tr>
+                <th>Créée le</th>
+                <td>{{ convocation.createdAt ? convocation.createdAt|date('d/m/Y H:i') : '-' }}</td>
+            </tr>
+
+            <tr>
+                <th>Modifiée le</th>
+                <td>{{ convocation.updatedAt ? convocation.updatedAt|date('d/m/Y H:i') : '-' }}</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <a href="{{ path('app_convocation_index') }}">Retour à la liste</a>
+    <a href="{{ path('app_convocation_edit', { id: convocation.id }) }}">Modifier</a>
+
+    {% if convocation.footballMatch %}
+        <a href="{{ path('app_football_match_show', { id: convocation.footballMatch.id }) }}">
+            Retour au match
+        </a>
+    {% endif %}
+
+    {{ include('convocation/_delete_form.html.twig') }}
+{% endblock %}

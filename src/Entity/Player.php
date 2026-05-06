@@ -3,6 +3,8 @@
 namespace App\Entity;
 
 use App\Repository\PlayerRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
@@ -75,10 +77,17 @@ class Player
     #[ORM\ManyToOne(inversedBy: 'players')]
     private ?Team $team = null;
 
+    /**
+     * @var Collection<int, Convocation>
+     */
+    #[ORM\OneToMany(targetEntity: Convocation::class, mappedBy: 'player')]
+    private Collection $convocations;
+
     public function __construct()
     {
         $this->createdAt = new \DateTimeImmutable();
         $this->status = 'active';
+        $this->convocations = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -270,5 +279,40 @@ class Player
                     ->addViolation();
             }
         }
+    }
+
+    /**
+     * @return Collection<int, Convocation>
+     */
+    public function getConvocations(): Collection
+    {
+        return $this->convocations;
+    }
+
+    public function getConvocationsCount(): int
+    {
+        return $this->convocations->count();
+    }
+
+    public function addConvocation(Convocation $convocation): static
+    {
+        if (!$this->convocations->contains($convocation)) {
+            $this->convocations->add($convocation);
+            $convocation->setPlayer($this);
+        }
+
+        return $this;
+    }
+
+    public function removeConvocation(Convocation $convocation): static
+    {
+        if ($this->convocations->removeElement($convocation)) {
+            // set the owning side to null (unless already changed)
+            if ($convocation->getPlayer() === $this) {
+                $convocation->setPlayer(null);
+            }
+        }
+
+        return $this;
     }
 }

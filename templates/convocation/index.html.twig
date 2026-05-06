@@ -1,0 +1,63 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Convocations{% endblock %}
+
+{% block body %}
+    <h1>Liste des convocations</h1>
+
+    <a href="{{ path('app_convocation_new') }}">Créer une convocation</a>
+
+    {% if convocations is empty %}
+        <p>Aucune convocation enregistrée.</p>
+    {% else %}
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Match</th>
+                    <th>Joueur</th>
+                    <th>Statut</th>
+                    <th>Créée par</th>
+                    <th>Créée le</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for convocation in convocations %}
+                    <tr>
+                        <td>
+                            {% if convocation.footballMatch %}
+                                {{ convocation.footballMatch.matchDate ? convocation.footballMatch.matchDate|date('d/m/Y') : '-' }}
+                                —
+                                {{ convocation.footballMatch.team ? convocation.footballMatch.team.name : 'Équipe inconnue' }}
+                                vs
+                                {{ convocation.footballMatch.opponent }}
+                            {% else %}
+                                Match inconnu
+                            {% endif %}
+                        </td>
+
+                        <td>
+                            {{ convocation.player ? convocation.player.fullName : 'Joueur inconnu' }}
+                        </td>
+
+                        <td>{{ convocation.statusLabel }}</td>
+
+                        <td>
+                            {{ convocation.createdBy ? convocation.createdBy.fullName : 'Non renseigné' }}
+                        </td>
+
+                        <td>
+                            {{ convocation.createdAt ? convocation.createdAt|date('d/m/Y H:i') : '-' }}
+                        </td>
+
+                        <td>
+                            <a href="{{ path('app_convocation_show', { id: convocation.id }) }}">Voir</a>
+                            <a href="{{ path('app_convocation_edit', { id: convocation.id }) }}">Modifier</a>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endif %}
+{% endblock %}

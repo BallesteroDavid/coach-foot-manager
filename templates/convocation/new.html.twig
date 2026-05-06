@@ -1,0 +1,13 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Créer une convocation{% endblock %}
+
+{% block body %}
+    <h1>Créer une convocation</h1>
+
+    {{ include('convocation/_form.html.twig', {
+        button_label: 'Créer la convocation'
+    }) }}
+
+    <a href="{{ path('app_convocation_index') }}">Retour à la liste</a>
+{% endblock %}

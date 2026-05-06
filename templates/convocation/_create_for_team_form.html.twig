@@ -1,0 +1,7 @@
+<form method="post" action="{{ path('app_convocation_create_for_team', { id: football_match.id }) }}" onsubmit="return confirm('Voulez-vous convoquer tous les joueurs de cette équipe ?');">
+    <input type="hidden" name="_token" value="{{ csrf_token('create_convocations_for_team' ~ football_match.id) }}">
+
+    <button class="btn" type="submit">
+        Convoquer tous les joueurs de l’équipe
+    </button>
+</form>

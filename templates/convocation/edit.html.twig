@@ -1,0 +1,16 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Modifier la convocation{% endblock %}
+
+{% block body %}
+    <h1>Modifier la convocation</h1>
+
+    {{ include('convocation/_form.html.twig', {
+        button_label: 'Mettre à jour la convocation'
+    }) }}
+
+    <a href="{{ path('app_convocation_index') }}">Retour à la liste</a>
+    <a href="{{ path('app_convocation_show', { id: convocation.id }) }}">Retour au détail</a>
+
+    {{ include('convocation/_delete_form.html.twig') }}
+{% endblock %}

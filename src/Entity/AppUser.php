@@ -66,9 +66,16 @@ class AppUser implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\ManyToMany(targetEntity: Team::class, inversedBy: 'coaches')]
     private Collection $coachedTeams;
 
+    /**
+     * @var Collection<int, Convocation>
+     */
+    #[ORM\OneToMany(targetEntity: Convocation::class, mappedBy: 'createdBy')]
+    private Collection $createdConvocations;
+
     public function __construct()
     {
         $this->coachedTeams = new ArrayCollection();
+        $this->createdConvocations = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -243,6 +250,36 @@ class AppUser implements UserInterface, PasswordAuthenticatedUserInterface
     public function removeCoachedTeam(Team $coachedTeam): static
     {
         $this->coachedTeams->removeElement($coachedTeam);
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Convocation>
+     */
+    public function getCreatedConvocations(): Collection
+    {
+        return $this->createdConvocations;
+    }
+
+    public function addCreatedConvocation(Convocation $createdConvocation): static
+    {
+        if (!$this->createdConvocations->contains($createdConvocation)) {
+            $this->createdConvocations->add($createdConvocation);
+            $createdConvocation->setCreatedBy($this);
+        }
+
+        return $this;
+    }
+
+    public function removeCreatedConvocation(Convocation $createdConvocation): static
+    {
+        if ($this->createdConvocations->removeElement($createdConvocation)) {
+            // set the owning side to null (unless already changed)
+            if ($createdConvocation->getCreatedBy() === $this) {
+                $createdConvocation->setCreatedBy(null);
+            }
+        }
 
         return $this;
     }

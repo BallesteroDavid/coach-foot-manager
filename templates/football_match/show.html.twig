@@ -94,6 +94,68 @@
         </tbody>
     </table>
 
+    <h2>Convocations</h2>
+
+    <p>
+        <a href="{{ path('app_convocation_new_from_match', { id: football_match.id }) }}">
+            Ajouter une convocation
+        </a>
+    </p>
+
+    {{ include('convocation/_create_for_team_form.html.twig', {
+        football_match: football_match
+    }) }}
+
+    {% if football_match.convocations|length > 0 %}
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Joueur</th>
+                    <th>Équipe du joueur</th>
+                    <th>Statut</th>
+                    <th>Commentaire</th>
+                    <th>Créée par</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for convocation in football_match.convocations %}
+                    <tr>
+                        <td>
+                            {% if convocation.player %}
+                                <a href="{{ path('app_player_show', { id: convocation.player.id }) }}">
+                                    {{ convocation.player.fullName }}
+                                </a>
+                            {% else %}
+                                Joueur inconnu
+                            {% endif %}
+                        </td>
+
+                        <td>
+                            {{ convocation.player and convocation.player.team ? convocation.player.team.name : 'Sans équipe' }}
+                        </td>
+
+                        <td>{{ convocation.statusLabel }}</td>
+
+                        <td>{{ convocation.comment ?: '-' }}</td>
+
+                        <td>
+                            {{ convocation.createdBy ? convocation.createdBy.fullName : 'Non renseigné' }}
+                        </td>
+
+                        <td>
+                            <a href="{{ path('app_convocation_show', { id: convocation.id }) }}">Voir</a>
+                            <a href="{{ path('app_convocation_edit', { id: convocation.id }) }}">Modifier</a>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>Aucun joueur convoqué pour ce match.</p>
+    {% endif %}
+
     {% if football_match.matchType == 'retour' and football_match.firstMatch %}
         <h2>Match aller associé</h2>
 

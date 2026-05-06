@@ -101,6 +101,12 @@ class FootballMatch
     #[ORM\OneToMany(targetEntity: self::class, mappedBy: 'firstMatch')]
     private Collection $returnMatches;
 
+    /**
+     * @var Collection<int, Convocation>
+     */
+    #[ORM\OneToMany(targetEntity: Convocation::class, mappedBy: 'footballMatch')]
+    private Collection $convocations;
+
     public function __construct()
     {
         // date de création automatiquement renseignée à la création d'un match
@@ -111,6 +117,7 @@ class FootballMatch
         $this->matchType = 'simple';
         // Initialisation obligatoire de la collection pour éviter une erreur
         $this->returnMatches = new ArrayCollection();
+        $this->convocations = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -455,6 +462,41 @@ class FootballMatch
             // On évite de supprimer le lien si le match retour a déjà été rattaché à un autre match
             if ($returnMatch->getFirstMatch() === $this) {
                 $returnMatch->setFirstMatch(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Convocation>
+     */
+    public function getConvocations(): Collection
+    {
+        return $this->convocations;
+    }
+
+    public function getConvocationsCount(): int
+    {
+        return $this->convocations->count();
+    }
+
+    public function addConvocation(Convocation $convocation): static
+    {
+        if (!$this->convocations->contains($convocation)) {
+            $this->convocations->add($convocation);
+            $convocation->setFootballMatch($this);
+        }
+
+        return $this;
+    }
+
+    public function removeConvocation(Convocation $convocation): static
+    {
+        if ($this->convocations->removeElement($convocation)) {
+            // set the owning side to null (unless already changed)
+            if ($convocation->getFootballMatch() === $this) {
+                $convocation->setFootballMatch(null);
             }
         }
 
