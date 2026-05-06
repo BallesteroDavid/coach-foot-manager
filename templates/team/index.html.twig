@@ -17,6 +17,7 @@
                     <th>Club</th>
                     <th>Catégorie</th>
                     <th>Saison</th>
+                    <th>Coachs</th>
                     <th>Description</th>
                     <th>Joueurs</th>
                     <th>Matchs</th>
@@ -39,6 +40,16 @@
 
                         <td>
                             {{ team.season ? team.season.name : 'Aucune saison' }}
+                        </td>
+
+                        <td>
+                            {% if team.coaches|length > 0 %}
+                                {% for coach in team.coaches %}
+                                    {{ coach.fullName }}{% if not loop.last %}, {% endif %}
+                                {% endfor %}
+                            {% else %}
+                                Aucun coach
+                            {% endif %}
                         </td>
 
                         <td>

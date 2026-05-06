@@ -1,0 +1,68 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Utilisateurs{% endblock %}
+
+{% block body %}
+    <h1>Liste des utilisateurs</h1>
+
+    <a href="{{ path('app_user_new') }}">Créer un utilisateur</a>
+
+    {% set roleLabels = {
+        ROLE_USER: 'Utilisateur',
+        ROLE_COACH: 'Coach',
+        ROLE_ADMIN: 'Admin',
+        ROLE_SUPER_ADMIN: 'Super admin'
+    } %}
+
+    {% if app_users is empty %}
+        <p>Aucun utilisateur enregistré.</p>
+    {% else %}
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Nom complet</th>
+                    <th>Email</th>
+                    <th>Rôles</th>
+                    <th>Club</th>
+                    <th>Équipes encadrées</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for app_user in app_users %}
+                    <tr>
+                        <td>{{ app_user.fullName ?: '-' }}</td>
+
+                        <td>{{ app_user.email }}</td>
+
+                        <td>
+                            {% for role in app_user.roles %}
+                                {{ roleLabels[role]|default(role) }}{% if not loop.last %}, {% endif %}
+                            {% endfor %}
+                        </td>
+
+                        <td>
+                            {{ app_user.club ? app_user.club.name : 'Aucun club' }}
+                        </td>
+
+                        <td>
+                            {% if app_user.coachedTeams|length > 0 %}
+                                {% for team in app_user.coachedTeams %}
+                                    {{ team.name }}{% if not loop.last %}, {% endif %}
+                                {% endfor %}
+                            {% else %}
+                                Aucune équipe
+                            {% endif %}
+                        </td>
+
+                        <td>
+                            <a href="{{ path('app_user_show', { id: app_user.id }) }}">Voir</a>
+                            <a href="{{ path('app_user_edit', { id: app_user.id }) }}">Modifier</a>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endif %}
+{% endblock %}

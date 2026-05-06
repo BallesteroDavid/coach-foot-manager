@@ -62,6 +62,12 @@ class Team
     #[ORM\ManyToOne(inversedBy: 'teams')]
     private ?Season $season = null;
 
+    /**
+     * @var Collection<int, AppUser>
+     */
+    #[ORM\ManyToMany(targetEntity: AppUser::class, mappedBy: 'coachedTeams')]
+    private Collection $coaches;
+
     public function __construct()
     {
         // date de création automatiquement renseignée à la création de l'équipe
@@ -70,6 +76,7 @@ class Team
         // Initialisation des collections liées à l'équipe
         $this->players = new ArrayCollection();
         $this->footballMatches = new ArrayCollection();
+        $this->coaches = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -258,6 +265,33 @@ class Team
     public function setSeason(?Season $season): static
     {
         $this->season = $season;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, AppUser>
+     */
+    public function getCoaches(): Collection
+    {
+        return $this->coaches;
+    }
+
+    public function addCoach(AppUser $coach): static
+    {
+        if (!$this->coaches->contains($coach)) {
+            $this->coaches->add($coach);
+            $coach->addCoachedTeam($this);
+        }
+
+        return $this;
+    }
+
+    public function removeCoach(AppUser $coach): static
+    {
+        if ($this->coaches->removeElement($coach)) {
+            $coach->removeCoachedTeam($this);
+        }
 
         return $this;
     }

@@ -34,6 +34,25 @@
             </tr>
 
             <tr>
+                <th>Coachs</th>
+                <td>
+                    {% if team.coaches|length > 0 %}
+                        <ul>
+                            {% for coach in team.coaches %}
+                                <li>
+                                    <a href="{{ path('app_user_show', { id: coach.id }) }}">
+                                        {{ coach.fullName }}
+                                    </a>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        Aucun coach associé
+                    {% endif %}
+                </td>
+            </tr>
+
+            <tr>
                 <th>Description</th>
                 <td>{{ team.description ?: 'Non renseignée' }}</td>
             </tr>

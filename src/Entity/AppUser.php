@@ -3,9 +3,13 @@
 namespace App\Entity;
 
 use App\Repository\AppUserRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
+use Symfony\Component\Validator\Constraints as Assert;
+use Symfony\Component\Validator\Context\ExecutionContextInterface;
 
 #[ORM\Entity(repositoryClass: AppUserRepository::class)]
 #[ORM\UniqueConstraint(name: 'UNIQ_IDENTIFIER_EMAIL', fields: ['email'])]
@@ -17,12 +21,18 @@ class AppUser implements UserInterface, PasswordAuthenticatedUserInterface
     private ?int $id = null;
 
     #[ORM\Column(length: 180)]
+    #[Assert\NotBlank(message: "L'email est obligatoire.")]
+    #[Assert\Email(message: "L'adresse email n'est pas valide.")]
     private ?string $email = null;
 
     /**
      * @var list<string> The user roles
      */
     #[ORM\Column]
+    #[Assert\Count(
+        min: 1,
+        minMessage: 'Au moins un rôle doit être sélectionné.'
+    )]
     private array $roles = [];
 
     /**
@@ -32,13 +42,34 @@ class AppUser implements UserInterface, PasswordAuthenticatedUserInterface
     private ?string $password = null;
 
     #[ORM\Column(length: 100)]
+    #[Assert\NotBlank(message: 'Le prénom est obligatoire.')]
+    #[Assert\Length(
+        max: 100,
+        maxMessage: 'Le prénom ne peut pas dépasser {{ limit }} caractères.'
+    )]
     private ?string $firstname = null;
 
     #[ORM\Column(length: 100)]
+    #[Assert\NotBlank(message: 'Le nom est obligatoire.')]
+    #[Assert\Length(
+        max: 100,
+        maxMessage: 'Le nom ne peut pas dépasser {{ limit }} caractères.'
+    )]
     private ?string $lastname = null;
 
     #[ORM\ManyToOne(inversedBy: 'appUsers')]
     private ?Club $club = null;
+
+    /**
+     * @var Collection<int, Team>
+     */
+    #[ORM\ManyToMany(targetEntity: Team::class, inversedBy: 'coaches')]
+    private Collection $coachedTeams;
+
+    public function __construct()
+    {
+        $this->coachedTeams = new ArrayCollection();
+    }
 
     public function getId(): ?int
     {
@@ -145,6 +176,41 @@ class AppUser implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
+    public function getFullName(): string
+    {
+        return trim(($this->firstname ?? '') . ' ' . ($this->lastname ?? ''));
+    }
+
+    public function getCoachedTeamsCount(): int
+    {
+        return $this->coachedTeams->count();
+    }
+
+    public function __toString(): string
+    {
+        return $this->getFullName() ?: $this->email ?? '';
+    }
+
+    #[Assert\Callback]
+    public function validateCoachedTeamsBelongToSameClub(ExecutionContextInterface $context): void
+    {
+        // Si l'utilisateur est rattaché à un club,
+        // les équipes qu'il encadre doivent appartenir au même club.
+        if ($this->club === null) {
+            return;
+        }
+
+        foreach ($this->coachedTeams as $coachedTeam) {
+            if ($coachedTeam->getClub() !== $this->club) {
+                $context->buildViolation("Les équipes attribuées doivent appartenir au même club que l'utilisateur.")
+                    ->atPath('coachedTeams')
+                    ->addViolation();
+
+                return;
+            }
+        }
+    }
+
     public function getClub(): ?Club
     {
         return $this->club;
@@ -153,6 +219,30 @@ class AppUser implements UserInterface, PasswordAuthenticatedUserInterface
     public function setClub(?Club $club): static
     {
         $this->club = $club;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Team>
+     */
+    public function getCoachedTeams(): Collection
+    {
+        return $this->coachedTeams;
+    }
+
+    public function addCoachedTeam(Team $coachedTeam): static
+    {
+        if (!$this->coachedTeams->contains($coachedTeam)) {
+            $this->coachedTeams->add($coachedTeam);
+        }
+
+        return $this;
+    }
+
+    public function removeCoachedTeam(Team $coachedTeam): static
+    {
+        $this->coachedTeams->removeElement($coachedTeam);
 
         return $this;
     }
