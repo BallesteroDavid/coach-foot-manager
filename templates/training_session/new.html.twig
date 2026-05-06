@@ -1,0 +1,32 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Créer un entraînement{% endblock %}
+
+{% block body %}
+    <h1>Créer un entraînement</h1>
+
+    {% if team is defined and team %}
+        <p>
+            Équipe :
+            <strong>{{ team.name }}</strong>
+
+            {% if team.category %}
+                — {{ team.category.name }}
+            {% endif %}
+
+            {% if team.season %}
+                — {{ team.season.name }}
+            {% endif %}
+        </p>
+    {% endif %}
+
+    {{ include('training_session/_form.html.twig', {
+        button_label: "Créer l'entraînement"
+    }) }}
+
+    {% if team is defined and team %}
+        <a href="{{ path('app_team_show', { id: team.id }) }}">Retour à l'équipe</a>
+    {% else %}
+        <a href="{{ path('app_training_session_index') }}">Retour à la liste</a>
+    {% endif %}
+{% endblock %}

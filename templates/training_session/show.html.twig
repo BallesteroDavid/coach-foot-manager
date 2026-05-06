@@ -1,0 +1,79 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Détail de l'entraînement{% endblock %}
+
+{% block body %}
+    <h1>Détail de l'entraînement</h1>
+
+    <table class="table">
+        <tbody>
+            <tr>
+                <th>Équipe</th>
+                <td>
+                    {% if training_session.team %}
+                        <a href="{{ path('app_team_show', { id: training_session.team.id }) }}">
+                            {{ training_session.team.name }}
+                        </a>
+                    {% else %}
+                        Équipe inconnue
+                    {% endif %}
+                </td>
+            </tr>
+
+            <tr>
+                <th>Date</th>
+                <td>{{ training_session.trainingDate ? training_session.trainingDate|date('d/m/Y') : '-' }}</td>
+            </tr>
+
+            <tr>
+                <th>Horaires</th>
+                <td>{{ training_session.timeRangeLabel }}</td>
+            </tr>
+
+            <tr>
+                <th>Durée</th>
+                <td>{{ training_session.durationLabel }}</td>
+            </tr>
+
+            <tr>
+                <th>Lieu</th>
+                <td>{{ training_session.location }}</td>
+            </tr>
+
+            <tr>
+                <th>Thème</th>
+                <td>{{ training_session.theme ?: 'Non renseigné' }}</td>
+            </tr>
+
+            <tr>
+                <th>Commentaire</th>
+                <td>{{ training_session.comment ?: 'Aucun commentaire' }}</td>
+            </tr>
+
+            <tr>
+                <th>Créé par</th>
+                <td>{{ training_session.createdBy ? training_session.createdBy.fullName : 'Non renseigné' }}</td>
+            </tr>
+
+            <tr>
+                <th>Créé le</th>
+                <td>{{ training_session.createdAt ? training_session.createdAt|date('d/m/Y H:i') : '-' }}</td>
+            </tr>
+
+            <tr>
+                <th>Modifié le</th>
+                <td>{{ training_session.updatedAt ? training_session.updatedAt|date('d/m/Y H:i') : '-' }}</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <a href="{{ path('app_training_session_index') }}">Retour à la liste</a>
+
+    {% if training_session.team %}
+        <a href="{{ path('app_team_show', { id: training_session.team.id }) }}">Retour à l'équipe</a>
+    {% endif %}
+
+    <a href="{{ path('app_training_session_edit', { id: training_session.id }) }}">Modifier</a>
+
+    {{ include('training_session/_delete_form.html.twig') }}
+{% endblock %}

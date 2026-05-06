@@ -72,10 +72,17 @@ class AppUser implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\OneToMany(targetEntity: Convocation::class, mappedBy: 'createdBy')]
     private Collection $createdConvocations;
 
+    /**
+     * @var Collection<int, TrainingSession>
+     */
+    #[ORM\OneToMany(targetEntity: TrainingSession::class, mappedBy: 'createdBy')]
+    private Collection $createdTrainingSessions;
+
     public function __construct()
     {
         $this->coachedTeams = new ArrayCollection();
         $this->createdConvocations = new ArrayCollection();
+        $this->createdTrainingSessions = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -278,6 +285,36 @@ class AppUser implements UserInterface, PasswordAuthenticatedUserInterface
             // set the owning side to null (unless already changed)
             if ($createdConvocation->getCreatedBy() === $this) {
                 $createdConvocation->setCreatedBy(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, TrainingSession>
+     */
+    public function getCreatedTrainingSessions(): Collection
+    {
+        return $this->createdTrainingSessions;
+    }
+
+    public function addCreatedTrainingSession(TrainingSession $createdTrainingSession): static
+    {
+        if (!$this->createdTrainingSessions->contains($createdTrainingSession)) {
+            $this->createdTrainingSessions->add($createdTrainingSession);
+            $createdTrainingSession->setCreatedBy($this);
+        }
+
+        return $this;
+    }
+
+    public function removeCreatedTrainingSession(TrainingSession $createdTrainingSession): static
+    {
+        if ($this->createdTrainingSessions->removeElement($createdTrainingSession)) {
+            // set the owning side to null (unless already changed)
+            if ($createdTrainingSession->getCreatedBy() === $this) {
+                $createdTrainingSession->setCreatedBy(null);
             }
         }
 

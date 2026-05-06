@@ -1,0 +1,20 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Modifier l'entraînement{% endblock %}
+
+{% block body %}
+    <h1>Modifier l'entraînement</h1>
+
+    {{ include('training_session/_form.html.twig', {
+        button_label: "Mettre à jour l'entraînement"
+    }) }}
+
+    <a href="{{ path('app_training_session_index') }}">Retour à la liste</a>
+    <a href="{{ path('app_training_session_show', { id: training_session.id }) }}">Retour au détail</a>
+
+    {% if training_session.team %}
+        <a href="{{ path('app_team_show', { id: training_session.team.id }) }}">Retour à l'équipe</a>
+    {% endif %}
+
+    {{ include('training_session/_delete_form.html.twig') }}
+{% endblock %}

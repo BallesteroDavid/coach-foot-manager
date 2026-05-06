@@ -68,6 +68,11 @@
             </tr>
 
             <tr>
+                <th>Nombre d'entraînements</th>
+                <td>{{ team.trainingSessions|length }}</td>
+            </tr>
+
+            <tr>
                 <th>Créée le</th>
                 <td>{{ team.createdAt ? team.createdAt|date('d/m/Y H:i') : '-' }}</td>
             </tr>
@@ -79,18 +84,66 @@
         </tbody>
     </table>
 
+    <h2>Entraînements</h2>
+
+    <p>
+        <a href="{{ path('app_training_session_new_from_team', { id: team.id }) }}">
+            Créer un entraînement pour cette équipe
+        </a>
+    </p>
+
+    {% if team.trainingSessions|length > 0 %}
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Horaires</th>
+                    <th>Durée</th>
+                    <th>Lieu</th>
+                    <th>Thème</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for training_session in team.trainingSessions %}
+                    <tr>
+                        <td>
+                            {{ training_session.trainingDate ? training_session.trainingDate|date('d/m/Y') : '-' }}
+                        </td>
+
+                        <td>{{ training_session.timeRangeLabel }}</td>
+
+                        <td>{{ training_session.durationLabel }}</td>
+
+                        <td>{{ training_session.location }}</td>
+
+                        <td>{{ training_session.theme ?: 'Non renseigné' }}</td>
+
+                        <td>
+                            <a href="{{ path('app_training_session_show', { id: training_session.id }) }}">Voir</a>
+                            <a href="{{ path('app_training_session_edit', { id: training_session.id }) }}">Modifier</a>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>Aucun entraînement enregistré pour cette équipe.</p>
+    {% endif %}
+
     <a href="{{ path('app_team_index') }}">Retour à la liste</a>
     <a href="{{ path('app_team_edit', { id: team.id }) }}">Modifier</a>
 
-    {% if team.playersCount > 0 or team.footballMatchesCount > 0 %}
+    {% if team.playersCount > 0 or team.footballMatchesCount > 0 or team.trainingSessions|length > 0 %}
         <div class="alert alert-warning">
             <p>
-                Cette équipe possède déjà des joueurs ou des matchs associés.
+                Cette équipe possède déjà des joueurs, des matchs ou des entraînements associés.
                 Elle ne peut pas être supprimée directement.
             </p>
 
             <p>
-                Retire d'abord les joueurs et les matchs liés avant de supprimer cette équipe.
+                Retire d'abord les joueurs, les matchs et les entraînements liés avant de supprimer cette équipe.
             </p>
         </div>
     {% else %}
