@@ -5,9 +5,28 @@
 {% block body %}
     <h1>Créer une convocation</h1>
 
+    {% if football_match is defined and football_match %}
+        <p>
+            Match :
+            <strong>
+                {{ football_match.team ? football_match.team.name : 'Équipe inconnue' }}
+                vs
+                {{ football_match.opponent }}
+            </strong>
+            —
+            {{ football_match.matchDate ? football_match.matchDate|date('d/m/Y') : '-' }}
+        </p>
+    {% endif %}
+
     {{ include('convocation/_form.html.twig', {
         button_label: 'Créer la convocation'
     }) }}
 
-    <a href="{{ path('app_convocation_index') }}">Retour à la liste</a>
+    {% if football_match is defined and football_match %}
+        <a href="{{ path('app_football_match_show', { id: football_match.id }) }}">
+            Retour au match
+        </a>
+    {% else %}
+        <a href="{{ path('app_convocation_index') }}">Retour à la liste</a>
+    {% endif %}
 {% endblock %}

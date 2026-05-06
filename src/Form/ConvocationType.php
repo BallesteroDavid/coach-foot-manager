@@ -5,6 +5,7 @@ namespace App\Form;
 use App\Entity\Convocation;
 use App\Entity\FootballMatch;
 use App\Entity\Player;
+use App\Repository\PlayerRepository;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
@@ -34,6 +35,22 @@ class ConvocationType extends AbstractType
         $builder
             ->add('player', EntityType::class, [
                 'class' => Player::class,
+                'query_builder' => function (PlayerRepository $playerRepository) use ($options) {
+                    $queryBuilder = $playerRepository->createQueryBuilder('p')
+                        ->orderBy('p.lastName', 'ASC')
+                        ->addOrderBy('p.firstName', 'ASC');
+
+                    if (
+                        $options['football_match'] instanceof FootballMatch
+                        && $options['football_match']->getTeam() !== null
+                    ) {
+                        $queryBuilder
+                            ->andWhere('p.team = :team')
+                            ->setParameter('team', $options['football_match']->getTeam());
+                    }
+
+                    return $queryBuilder;
+                },
                 'choice_label' => function (Player $player) {
                     $team = $player->getTeam()?->getName() ?? 'Sans équipe';
 
@@ -65,6 +82,7 @@ class ConvocationType extends AbstractType
         $resolver->setDefaults([
             'data_class' => Convocation::class,
             'hide_football_match' => false,
+            'football_match' => null,
         ]);
     }
 }

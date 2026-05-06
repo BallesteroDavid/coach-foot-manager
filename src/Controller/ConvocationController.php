@@ -145,6 +145,7 @@ final class ConvocationController extends AbstractController
 
         $form = $this->createForm(ConvocationType::class, $convocation, [
             'hide_football_match' => true,
+            'football_match' => $footballMatch,
         ]);
 
         $form->handleRequest($request);
