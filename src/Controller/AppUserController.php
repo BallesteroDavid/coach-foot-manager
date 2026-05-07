@@ -20,11 +20,14 @@ final class AppUserController extends AbstractController
     #[Route(name: 'app_user_index', methods: ['GET'])]
     public function index(AppUserRepository $appUserRepository): Response
     {
+        $currentUser = $this->getUser();
+
+        if (!$currentUser instanceof AppUser) {
+            throw $this->createAccessDeniedException();
+        }
+
         return $this->render('app_user/index.html.twig', [
-            'app_users' => $appUserRepository->findBy([], [
-                'lastname' => 'ASC',
-                'firstname' => 'ASC',
-            ]),
+            'app_users' => $appUserRepository->findVisibleForUser($currentUser),
         ]);
     }
 
@@ -34,12 +37,25 @@ final class AppUserController extends AbstractController
         EntityManagerInterface $entityManager,
         UserPasswordHasherInterface $passwordHasher
     ): Response {
+        $currentUser = $this->getUser();
+
+        if (!$currentUser instanceof AppUser) {
+            throw $this->createAccessDeniedException();
+        }
+
         $appUser = new AppUser();
 
-        $form = $this->createForm(AppUserType::class, $appUser);
+        $form = $this->createForm(AppUserType::class, $appUser, [
+            'current_user' => $currentUser,
+        ]);
+
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
+            if (!$this->canAccessAppUser($appUser)) {
+                throw $this->createAccessDeniedException("Vous ne pouvez pas créer cet utilisateur.");
+            }
+
             $plainPassword = $form->get('plainPassword')->getData();
 
             $hashedPassword = $passwordHasher->hashPassword($appUser, $plainPassword);
@@ -62,6 +78,10 @@ final class AppUserController extends AbstractController
     #[Route('/{id}', name: 'app_user_show', methods: ['GET'])]
     public function show(AppUser $appUser): Response
     {
+        if (!$this->canAccessAppUser($appUser)) {
+            throw $this->createAccessDeniedException("Vous ne pouvez pas accéder à cet utilisateur.");
+        }
+
         return $this->render('app_user/show.html.twig', [
             'app_user' => $appUser,
         ]);
@@ -74,13 +94,28 @@ final class AppUserController extends AbstractController
         EntityManagerInterface $entityManager,
         UserPasswordHasherInterface $passwordHasher
     ): Response {
+        if (!$this->canAccessAppUser($appUser)) {
+            throw $this->createAccessDeniedException("Vous ne pouvez pas modifier cet utilisateur.");
+        }
+
+        $currentUser = $this->getUser();
+
+        if (!$currentUser instanceof AppUser) {
+            throw $this->createAccessDeniedException();
+        }
+
         $form = $this->createForm(AppUserType::class, $appUser, [
             'is_edit' => true,
+            'current_user' => $currentUser,
         ]);
 
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
+            if (!$this->canAccessAppUser($appUser)) {
+                throw $this->createAccessDeniedException("Vous ne pouvez pas rattacher cet utilisateur à ce club.");
+            }
+
             $plainPassword = $form->get('plainPassword')->getData();
 
             if (!empty($plainPassword)) {
@@ -102,8 +137,15 @@ final class AppUserController extends AbstractController
     }
 
     #[Route('/{id}', name: 'app_user_delete', methods: ['POST'])]
-    public function delete(Request $request, AppUser $appUser, EntityManagerInterface $entityManager): Response
-    {
+    public function delete(
+        Request $request,
+        AppUser $appUser,
+        EntityManagerInterface $entityManager
+    ): Response {
+        if (!$this->canAccessAppUser($appUser)) {
+            throw $this->createAccessDeniedException("Vous ne pouvez pas supprimer cet utilisateur.");
+        }
+
         if ($this->isCsrfTokenValid('delete'.$appUser->getId(), $request->getPayload()->getString('_token'))) {
             $currentUser = $this->getUser();
 
@@ -126,5 +168,34 @@ final class AppUserController extends AbstractController
         }
 
         return $this->redirectToRoute('app_user_index', [], Response::HTTP_SEE_OTHER);
+    }
+
+    private function canAccessAppUser(AppUser $appUser): bool
+    {
+        $currentUser = $this->getUser();
+
+        if (!$currentUser instanceof AppUser) {
+            return false;
+        }
+
+        if ($this->isGranted('ROLE_SUPER_ADMIN')) {
+            return true;
+        }
+
+        if ($this->isGranted('ROLE_ADMIN')) {
+            // Un admin de club ne doit pas gérer un super admin.
+            if (in_array('ROLE_SUPER_ADMIN', $appUser->getRoles(), true)) {
+                return false;
+            }
+
+            $currentUserClub = $currentUser->getClub();
+            $targetUserClub = $appUser->getClub();
+
+            return $currentUserClub !== null
+                && $targetUserClub !== null
+                && $currentUserClub->getId() === $targetUserClub->getId();
+        }
+
+        return false;
     }
 }

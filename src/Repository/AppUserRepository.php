@@ -20,6 +20,50 @@ class AppUserRepository extends ServiceEntityRepository implements PasswordUpgra
     }
 
     /**
+     * Retourne les utilisateurs visibles selon l'utilisateur connecté.
+     *
+     * ROLE_SUPER_ADMIN :
+     * - voit tous les utilisateurs
+     *
+     * ROLE_ADMIN :
+     * - voit uniquement les utilisateurs de son club
+     *
+     * @return AppUser[]
+     */
+    public function findVisibleForUser(AppUser $user): array
+    {
+        $queryBuilder = $this->createQueryBuilder('u')
+            ->leftJoin('u.club', 'club')
+            ->addSelect('club')
+            ->orderBy('u.lastname', 'ASC')
+            ->addOrderBy('u.firstname', 'ASC');
+
+        $roles = $user->getRoles();
+
+        if (in_array('ROLE_SUPER_ADMIN', $roles, true)) {
+            return $queryBuilder
+                ->getQuery()
+                ->getResult();
+        }
+
+        if (in_array('ROLE_ADMIN', $roles, true)) {
+            $club = $user->getClub();
+
+            if ($club === null) {
+                return [];
+            }
+
+            return $queryBuilder
+                ->andWhere('u.club = :club')
+                ->setParameter('club', $club)
+                ->getQuery()
+                ->getResult();
+        }
+
+        return [];
+    }
+
+    /**
      * Used to upgrade (rehash) the user's password automatically over time.
      */
     public function upgradePassword(PasswordAuthenticatedUserInterface $user, string $newHashedPassword): void
@@ -29,32 +73,8 @@ class AppUserRepository extends ServiceEntityRepository implements PasswordUpgra
         }
 
         $user->setPassword($newHashedPassword);
+
         $this->getEntityManager()->persist($user);
         $this->getEntityManager()->flush();
     }
-
-    //    /**
-    //     * @return AppUser[] Returns an array of AppUser objects
-    //     */
-    //    public function findByExampleField($value): array
-    //    {
-    //        return $this->createQueryBuilder('a')
-    //            ->andWhere('a.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->orderBy('a.id', 'ASC')
-    //            ->setMaxResults(10)
-    //            ->getQuery()
-    //            ->getResult()
-    //        ;
-    //    }
-
-    //    public function findOneBySomeField($value): ?AppUser
-    //    {
-    //        return $this->createQueryBuilder('a')
-    //            ->andWhere('a.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->getQuery()
-    //            ->getOneOrNullResult()
-    //        ;
-    //    }
 }

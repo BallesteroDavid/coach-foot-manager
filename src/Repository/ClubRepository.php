@@ -2,6 +2,7 @@
 
 namespace App\Repository;
 
+use App\Entity\AppUser;
 use App\Entity\Club;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
@@ -16,28 +17,44 @@ class ClubRepository extends ServiceEntityRepository
         parent::__construct($registry, Club::class);
     }
 
-    //    /**
-    //     * @return Club[] Returns an array of Club objects
-    //     */
-    //    public function findByExampleField($value): array
-    //    {
-    //        return $this->createQueryBuilder('c')
-    //            ->andWhere('c.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->orderBy('c.id', 'ASC')
-    //            ->setMaxResults(10)
-    //            ->getQuery()
-    //            ->getResult()
-    //        ;
-    //    }
+    /**
+     * Retourne les clubs visibles selon l'utilisateur connecté.
+     *
+     * ROLE_SUPER_ADMIN :
+     * - voit tous les clubs
+     *
+     * ROLE_ADMIN :
+     * - voit uniquement son club
+     *
+     * @return Club[]
+     */
+    public function findVisibleForUser(AppUser $user): array
+    {
+        $queryBuilder = $this->createQueryBuilder('club')
+            ->orderBy('club.name', 'ASC');
 
-    //    public function findOneBySomeField($value): ?Club
-    //    {
-    //        return $this->createQueryBuilder('c')
-    //            ->andWhere('c.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->getQuery()
-    //            ->getOneOrNullResult()
-    //        ;
-    //    }
+        $roles = $user->getRoles();
+
+        if (in_array('ROLE_SUPER_ADMIN', $roles, true)) {
+            return $queryBuilder
+                ->getQuery()
+                ->getResult();
+        }
+
+        if (in_array('ROLE_ADMIN', $roles, true)) {
+            $club = $user->getClub();
+
+            if ($club === null) {
+                return [];
+            }
+
+            return $queryBuilder
+                ->andWhere('club = :club')
+                ->setParameter('club', $club)
+                ->getQuery()
+                ->getResult();
+        }
+
+        return [];
+    }
 }

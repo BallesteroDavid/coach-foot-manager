@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\Entity\AppUser;
 use App\Entity\Club;
 use App\Form\ClubType;
 use App\Repository\ClubRepository;
@@ -19,17 +20,23 @@ final class ClubController extends AbstractController
     #[Route(name: 'app_club_index', methods: ['GET'])]
     public function index(ClubRepository $clubRepository): Response
     {
+        $currentUser = $this->getUser();
+
+        if (!$currentUser instanceof AppUser) {
+            throw $this->createAccessDeniedException();
+        }
+
         return $this->render('club/index.html.twig', [
-            'clubs' => $clubRepository->findBy([], [
-                'name' => 'ASC',
-            ]),
+            'clubs' => $clubRepository->findVisibleForUser($currentUser),
         ]);
     }
 
     #[Route('/new', name: 'app_club_new', methods: ['GET', 'POST'])]
+    #[IsGranted('ROLE_SUPER_ADMIN')]
     public function new(Request $request, EntityManagerInterface $entityManager): Response
     {
         $club = new Club();
+
         $form = $this->createForm(ClubType::class, $club);
         $form->handleRequest($request);
 
@@ -51,18 +58,33 @@ final class ClubController extends AbstractController
     #[Route('/{id}', name: 'app_club_show', methods: ['GET'])]
     public function show(Club $club): Response
     {
+        if (!$this->canAccessClub($club)) {
+            throw $this->createAccessDeniedException("Vous ne pouvez pas accéder à ce club.");
+        }
+
         return $this->render('club/show.html.twig', [
             'club' => $club,
         ]);
     }
 
     #[Route('/{id}/edit', name: 'app_club_edit', methods: ['GET', 'POST'])]
-    public function edit(Request $request, Club $club, EntityManagerInterface $entityManager): Response
-    {
+    public function edit(
+        Request $request,
+        Club $club,
+        EntityManagerInterface $entityManager
+    ): Response {
+        if (!$this->canAccessClub($club)) {
+            throw $this->createAccessDeniedException("Vous ne pouvez pas modifier ce club.");
+        }
+
         $form = $this->createForm(ClubType::class, $club);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
+            if (!$this->canAccessClub($club)) {
+                throw $this->createAccessDeniedException("Vous ne pouvez pas modifier ce club.");
+            }
+
             $entityManager->flush();
 
             $this->addFlash('success', 'Le club a bien été modifié.');
@@ -77,8 +99,16 @@ final class ClubController extends AbstractController
     }
 
     #[Route('/{id}', name: 'app_club_delete', methods: ['POST'])]
-    public function delete(Request $request, Club $club, EntityManagerInterface $entityManager): Response
-    {
+    #[IsGranted('ROLE_SUPER_ADMIN')]
+    public function delete(
+        Request $request,
+        Club $club,
+        EntityManagerInterface $entityManager
+    ): Response {
+        if (!$this->canAccessClub($club)) {
+            throw $this->createAccessDeniedException("Vous ne pouvez pas supprimer ce club.");
+        }
+
         if ($this->isCsrfTokenValid('delete'.$club->getId(), $request->getPayload()->getString('_token'))) {
             if (
                 $club->getAppUsersCount() > 0
@@ -103,5 +133,27 @@ final class ClubController extends AbstractController
         }
 
         return $this->redirectToRoute('app_club_index', [], Response::HTTP_SEE_OTHER);
+    }
+
+    private function canAccessClub(Club $club): bool
+    {
+        $currentUser = $this->getUser();
+
+        if (!$currentUser instanceof AppUser) {
+            return false;
+        }
+
+        if ($this->isGranted('ROLE_SUPER_ADMIN')) {
+            return true;
+        }
+
+        if ($this->isGranted('ROLE_ADMIN')) {
+            $userClub = $currentUser->getClub();
+
+            return $userClub !== null
+                && $userClub->getId() === $club->getId();
+        }
+
+        return false;
     }
 }

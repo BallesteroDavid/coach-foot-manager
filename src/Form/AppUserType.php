@@ -5,6 +5,8 @@ namespace App\Form;
 use App\Entity\AppUser;
 use App\Entity\Club;
 use App\Entity\Team;
+use App\Repository\ClubRepository;
+use App\Repository\TeamRepository;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
@@ -25,6 +27,20 @@ class AppUserType extends AbstractType
             $passwordConstraints[] = new Assert\NotBlank([
                 'message' => 'Le mot de passe est obligatoire.',
             ]);
+        }
+
+        $roleChoices = [
+            'Coach' => 'ROLE_COACH',
+            'Admin' => 'ROLE_ADMIN',
+        ];
+
+        $currentUser = $options['current_user'];
+
+        if (
+            $currentUser instanceof AppUser
+            && in_array('ROLE_SUPER_ADMIN', $currentUser->getRoles(), true)
+        ) {
+            $roleChoices['Super admin'] = 'ROLE_SUPER_ADMIN';
         }
 
         $builder
@@ -52,17 +68,41 @@ class AppUserType extends AbstractType
 
             ->add('roles', ChoiceType::class, [
                 'label' => 'Rôles',
-                'choices' => [
-                    'Coach' => 'ROLE_COACH',
-                    'Admin' => 'ROLE_ADMIN',
-                    'Super admin' => 'ROLE_SUPER_ADMIN',
-                ],
+                'choices' => $roleChoices,
                 'multiple' => true,
                 'expanded' => true,
             ])
 
             ->add('club', EntityType::class, [
                 'class' => Club::class,
+                'query_builder' => function (ClubRepository $clubRepository) use ($options) {
+                    $queryBuilder = $clubRepository->createQueryBuilder('c')
+                        ->orderBy('c.name', 'ASC');
+
+                    $user = $options['current_user'];
+
+                    if (!$user instanceof AppUser) {
+                        return $queryBuilder->andWhere('1 = 0');
+                    }
+
+                    $roles = $user->getRoles();
+
+                    if (in_array('ROLE_SUPER_ADMIN', $roles, true)) {
+                        return $queryBuilder;
+                    }
+
+                    if (in_array('ROLE_ADMIN', $roles, true)) {
+                        if ($user->getClub() === null) {
+                            return $queryBuilder->andWhere('1 = 0');
+                        }
+
+                        return $queryBuilder
+                            ->andWhere('c = :club')
+                            ->setParameter('club', $user->getClub());
+                    }
+
+                    return $queryBuilder->andWhere('1 = 0');
+                },
                 'choice_label' => 'name',
                 'placeholder' => 'Choisir un club',
                 'required' => false,
@@ -71,6 +111,40 @@ class AppUserType extends AbstractType
 
             ->add('coachedTeams', EntityType::class, [
                 'class' => Team::class,
+                'query_builder' => function (TeamRepository $teamRepository) use ($options) {
+                    $queryBuilder = $teamRepository->createQueryBuilder('t')
+                        ->leftJoin('t.club', 'club')
+                        ->addSelect('club')
+                        ->leftJoin('t.category', 'category')
+                        ->addSelect('category')
+                        ->leftJoin('t.season', 'season')
+                        ->addSelect('season')
+                        ->orderBy('t.name', 'ASC');
+
+                    $user = $options['current_user'];
+
+                    if (!$user instanceof AppUser) {
+                        return $queryBuilder->andWhere('1 = 0');
+                    }
+
+                    $roles = $user->getRoles();
+
+                    if (in_array('ROLE_SUPER_ADMIN', $roles, true)) {
+                        return $queryBuilder;
+                    }
+
+                    if (in_array('ROLE_ADMIN', $roles, true)) {
+                        if ($user->getClub() === null) {
+                            return $queryBuilder->andWhere('1 = 0');
+                        }
+
+                        return $queryBuilder
+                            ->andWhere('t.club = :club')
+                            ->setParameter('club', $user->getClub());
+                    }
+
+                    return $queryBuilder->andWhere('1 = 0');
+                },
                 'choice_label' => function (Team $team) {
                     $club = $team->getClub()?->getName() ?? 'Club inconnu';
                     $category = $team->getCategory()?->getName() ?? 'Sans catégorie';
@@ -93,6 +167,7 @@ class AppUserType extends AbstractType
         $resolver->setDefaults([
             'data_class' => AppUser::class,
             'is_edit' => false,
+            'current_user' => null,
         ]);
     }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Repository;
 
+use App\Entity\AppUser;
 use App\Entity\Season;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
@@ -16,28 +17,46 @@ class SeasonRepository extends ServiceEntityRepository
         parent::__construct($registry, Season::class);
     }
 
-//    /**
-//     * @return Season[] Returns an array of Season objects
-//     */
-//    public function findByExampleField($value): array
-//    {
-//        return $this->createQueryBuilder('s')
-//            ->andWhere('s.exampleField = :val')
-//            ->setParameter('val', $value)
-//            ->orderBy('s.id', 'ASC')
-//            ->setMaxResults(10)
-//            ->getQuery()
-//            ->getResult()
-//        ;
-//    }
+    /**
+     * Retourne les saisons visibles selon l'utilisateur connecté.
+     *
+     * ROLE_SUPER_ADMIN :
+     * - voit toutes les saisons
+     *
+     * ROLE_ADMIN :
+     * - voit les saisons de son club
+     *
+     * @return Season[]
+     */
+    public function findVisibleForUser(AppUser $user): array
+    {
+        $queryBuilder = $this->createQueryBuilder('season')
+            ->leftJoin('season.club', 'club')
+            ->addSelect('club')
+            ->orderBy('season.startDate', 'DESC');
 
-//    public function findOneBySomeField($value): ?Season
-//    {
-//        return $this->createQueryBuilder('s')
-//            ->andWhere('s.exampleField = :val')
-//            ->setParameter('val', $value)
-//            ->getQuery()
-//            ->getOneOrNullResult()
-//        ;
-//    }
+        $roles = $user->getRoles();
+
+        if (in_array('ROLE_SUPER_ADMIN', $roles, true)) {
+            return $queryBuilder
+                ->getQuery()
+                ->getResult();
+        }
+
+        if (in_array('ROLE_ADMIN', $roles, true)) {
+            $club = $user->getClub();
+
+            if ($club === null) {
+                return [];
+            }
+
+            return $queryBuilder
+                ->andWhere('season.club = :club')
+                ->setParameter('club', $club)
+                ->getQuery()
+                ->getResult();
+        }
+
+        return [];
+    }
 }

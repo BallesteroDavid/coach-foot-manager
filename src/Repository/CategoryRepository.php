@@ -2,6 +2,7 @@
 
 namespace App\Repository;
 
+use App\Entity\AppUser;
 use App\Entity\Category;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
@@ -16,28 +17,46 @@ class CategoryRepository extends ServiceEntityRepository
         parent::__construct($registry, Category::class);
     }
 
-    //    /**
-    //     * @return Category[] Returns an array of Category objects
-    //     */
-    //    public function findByExampleField($value): array
-    //    {
-    //        return $this->createQueryBuilder('c')
-    //            ->andWhere('c.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->orderBy('c.id', 'ASC')
-    //            ->setMaxResults(10)
-    //            ->getQuery()
-    //            ->getResult()
-    //        ;
-    //    }
+    /**
+     * Retourne les catégories visibles selon l'utilisateur connecté.
+     *
+     * ROLE_SUPER_ADMIN :
+     * - voit toutes les catégories
+     *
+     * ROLE_ADMIN :
+     * - voit les catégories de son club
+     *
+     * @return Category[]
+     */
+    public function findVisibleForUser(AppUser $user): array
+    {
+        $queryBuilder = $this->createQueryBuilder('category')
+            ->leftJoin('category.club', 'club')
+            ->addSelect('club')
+            ->orderBy('category.name', 'ASC');
 
-    //    public function findOneBySomeField($value): ?Category
-    //    {
-    //        return $this->createQueryBuilder('c')
-    //            ->andWhere('c.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->getQuery()
-    //            ->getOneOrNullResult()
-    //        ;
-    //    }
+        $roles = $user->getRoles();
+
+        if (in_array('ROLE_SUPER_ADMIN', $roles, true)) {
+            return $queryBuilder
+                ->getQuery()
+                ->getResult();
+        }
+
+        if (in_array('ROLE_ADMIN', $roles, true)) {
+            $club = $user->getClub();
+
+            if ($club === null) {
+                return [];
+            }
+
+            return $queryBuilder
+                ->andWhere('category.club = :club')
+                ->setParameter('club', $club)
+                ->getQuery()
+                ->getResult();
+        }
+
+        return [];
+    }
 }

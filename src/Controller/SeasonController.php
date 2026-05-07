@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\Entity\AppUser;
 use App\Entity\Season;
 use App\Form\SeasonType;
 use App\Repository\SeasonRepository;
@@ -19,21 +20,39 @@ final class SeasonController extends AbstractController
     #[Route(name: 'app_season_index', methods: ['GET'])]
     public function index(SeasonRepository $seasonRepository): Response
     {
+        $currentUser = $this->getUser();
+
+        if (!$currentUser instanceof AppUser) {
+            throw $this->createAccessDeniedException();
+        }
+
         return $this->render('season/index.html.twig', [
-            'seasons' => $seasonRepository->findBy([], [
-                'startDate' => 'DESC',
-            ]),
+            'seasons' => $seasonRepository->findVisibleForUser($currentUser),
         ]);
     }
 
     #[Route('/new', name: 'app_season_new', methods: ['GET', 'POST'])]
     public function new(Request $request, EntityManagerInterface $entityManager): Response
     {
+        $currentUser = $this->getUser();
+
+        if (!$currentUser instanceof AppUser) {
+            throw $this->createAccessDeniedException();
+        }
+
         $season = new Season();
-        $form = $this->createForm(SeasonType::class, $season);
+
+        $form = $this->createForm(SeasonType::class, $season, [
+            'current_user' => $currentUser,
+        ]);
+
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
+            if (!$this->canAccessSeason($season)) {
+                throw $this->createAccessDeniedException("Vous ne pouvez pas créer une saison pour ce club.");
+            }
+
             $entityManager->persist($season);
             $entityManager->flush();
 
@@ -51,18 +70,42 @@ final class SeasonController extends AbstractController
     #[Route('/{id}', name: 'app_season_show', methods: ['GET'])]
     public function show(Season $season): Response
     {
+        if (!$this->canAccessSeason($season)) {
+            throw $this->createAccessDeniedException("Vous ne pouvez pas accéder à cette saison.");
+        }
+
         return $this->render('season/show.html.twig', [
             'season' => $season,
         ]);
     }
 
     #[Route('/{id}/edit', name: 'app_season_edit', methods: ['GET', 'POST'])]
-    public function edit(Request $request, Season $season, EntityManagerInterface $entityManager): Response
-    {
-        $form = $this->createForm(SeasonType::class, $season);
+    public function edit(
+        Request $request,
+        Season $season,
+        EntityManagerInterface $entityManager
+    ): Response {
+        if (!$this->canAccessSeason($season)) {
+            throw $this->createAccessDeniedException("Vous ne pouvez pas modifier cette saison.");
+        }
+
+        $currentUser = $this->getUser();
+
+        if (!$currentUser instanceof AppUser) {
+            throw $this->createAccessDeniedException();
+        }
+
+        $form = $this->createForm(SeasonType::class, $season, [
+            'current_user' => $currentUser,
+        ]);
+
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
+            if (!$this->canAccessSeason($season)) {
+                throw $this->createAccessDeniedException("Vous ne pouvez pas rattacher cette saison à ce club.");
+            }
+
             $season->setUpdatedAt(new \DateTimeImmutable());
 
             $entityManager->flush();
@@ -79,8 +122,15 @@ final class SeasonController extends AbstractController
     }
 
     #[Route('/{id}', name: 'app_season_delete', methods: ['POST'])]
-    public function delete(Request $request, Season $season, EntityManagerInterface $entityManager): Response
-    {
+    public function delete(
+        Request $request,
+        Season $season,
+        EntityManagerInterface $entityManager
+    ): Response {
+        if (!$this->canAccessSeason($season)) {
+            throw $this->createAccessDeniedException("Vous ne pouvez pas supprimer cette saison.");
+        }
+
         if ($this->isCsrfTokenValid('delete'.$season->getId(), $request->getPayload()->getString('_token'))) {
             if ($season->getTeams()->count() > 0) {
                 $this->addFlash(
@@ -100,5 +150,29 @@ final class SeasonController extends AbstractController
         }
 
         return $this->redirectToRoute('app_season_index', [], Response::HTTP_SEE_OTHER);
+    }
+
+    private function canAccessSeason(Season $season): bool
+    {
+        $currentUser = $this->getUser();
+
+        if (!$currentUser instanceof AppUser) {
+            return false;
+        }
+
+        if ($this->isGranted('ROLE_SUPER_ADMIN')) {
+            return true;
+        }
+
+        if ($this->isGranted('ROLE_ADMIN')) {
+            $userClub = $currentUser->getClub();
+            $seasonClub = $season->getClub();
+
+            return $userClub !== null
+                && $seasonClub !== null
+                && $userClub->getId() === $seasonClub->getId();
+        }
+
+        return false;
     }
 }
