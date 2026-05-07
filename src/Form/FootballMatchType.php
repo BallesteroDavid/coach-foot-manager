@@ -2,9 +2,11 @@
 
 namespace App\Form;
 
+use App\Entity\AppUser;
 use App\Entity\FootballMatch;
 use App\Entity\Team;
 use App\Repository\FootballMatchRepository;
+use App\Repository\TeamRepository;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
@@ -19,23 +21,74 @@ class FootballMatchType extends AbstractType
 {
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
-        $builder
-            ->add('team', EntityType::class, [
+        if (!$options['is_return_creation']) {
+            $builder->add('team', EntityType::class, [
                 'class' => Team::class,
-                'choice_label' => 'name',
+                'query_builder' => function (TeamRepository $teamRepository) use ($options) {
+                    $queryBuilder = $teamRepository->createQueryBuilder('t')
+                        ->leftJoin('t.club', 'c')
+                        ->addSelect('c')
+                        ->leftJoin('t.category', 'cat')
+                        ->addSelect('cat')
+                        ->leftJoin('t.season', 's')
+                        ->addSelect('s')
+                        ->orderBy('t.name', 'ASC');
+
+                    $user = $options['current_user'];
+
+                    if (!$user instanceof AppUser) {
+                        return $queryBuilder->andWhere('1 = 0');
+                    }
+
+                    $roles = $user->getRoles();
+
+                    if (in_array('ROLE_SUPER_ADMIN', $roles, true)) {
+                        return $queryBuilder;
+                    }
+
+                    if (in_array('ROLE_ADMIN', $roles, true)) {
+                        if ($user->getClub() === null) {
+                            return $queryBuilder->andWhere('1 = 0');
+                        }
+
+                        return $queryBuilder
+                            ->andWhere('t.club = :club')
+                            ->setParameter('club', $user->getClub());
+                    }
+
+                    if (in_array('ROLE_COACH', $roles, true)) {
+                        $coachedTeams = $user->getCoachedTeams()->toArray();
+
+                        if (count($coachedTeams) === 0) {
+                            return $queryBuilder->andWhere('1 = 0');
+                        }
+
+                        return $queryBuilder
+                            ->andWhere('t IN (:teams)')
+                            ->setParameter('teams', $coachedTeams);
+                    }
+
+                    return $queryBuilder->andWhere('1 = 0');
+                },
+                'choice_label' => function (Team $team) {
+                    $category = $team->getCategory()?->getName() ?? 'Sans catégorie';
+                    $season = $team->getSeason()?->getName() ?? 'Sans saison';
+
+                    return $team->getName() . ' - ' . $category . ' - ' . $season;
+                },
                 'placeholder' => 'Choisir une équipe',
                 'label' => 'Équipe',
-            ])
+            ]);
+        }
 
+        $builder
             ->add('matchDate', DateType::class, [
                 'widget' => 'single_text',
-                'input' => 'datetime_immutable',
                 'label' => 'Date du match',
             ])
 
             ->add('startTime', TimeType::class, [
                 'widget' => 'single_text',
-                'input' => 'datetime_immutable',
                 'label' => 'Heure du match',
             ])
 
@@ -45,7 +98,6 @@ class FootballMatchType extends AbstractType
 
             ->add('locationType', ChoiceType::class, [
                 'label' => 'Type de lieu',
-                'placeholder' => 'Choisir le type de lieu',
                 'choices' => [
                     'Domicile' => 'home',
                     'Extérieur' => 'away',
@@ -65,19 +117,11 @@ class FootballMatchType extends AbstractType
             ->add('homeScore', IntegerType::class, [
                 'label' => 'Score domicile',
                 'required' => false,
-                'help' => 'À renseigner seulement si le match est en cours ou terminé.',
-                'attr' => [
-                    'min' => 0,
-                ],
             ])
 
             ->add('awayScore', IntegerType::class, [
                 'label' => 'Score extérieur',
                 'required' => false,
-                'help' => 'À renseigner seulement si le match est en cours ou terminé.',
-                'attr' => [
-                    'min' => 0,
-                ],
             ])
 
             ->add('status', ChoiceType::class, [
@@ -91,15 +135,10 @@ class FootballMatchType extends AbstractType
             ])
         ;
 
-        // Dans le cas d'une création automatique de match retour,
-        // on masque ces deux champs car ils sont déjà définis dans le contrôleur :
-        // - matchType = retour
-        // - firstMatch = match aller courant
         if (!$options['is_return_creation']) {
             $builder
                 ->add('matchType', ChoiceType::class, [
                     'label' => 'Type de match',
-                    'help' => 'Choisir "Match retour" uniquement si ce match doit être rattaché à un match aller.',
                     'choices' => [
                         'Match simple' => 'simple',
                         'Match aller' => 'aller',
@@ -109,28 +148,63 @@ class FootballMatchType extends AbstractType
 
                 ->add('firstMatch', EntityType::class, [
                     'class' => FootballMatch::class,
-                    'label' => 'Match aller associé',
-                    'required' => false,
-                    'placeholder' => 'Aucun match aller associé',
-                    'help' => 'À renseigner uniquement si le type de match est "Match retour".',
-
-                    // On affiche seulement les matchs de type "aller"
-                    // pour éviter de lier un match retour à n'importe quel match.
-                    'query_builder' => function (FootballMatchRepository $repository) {
-                        return $repository->createQueryBuilder('m')
-                            ->andWhere('m.matchType = :matchType')
+                    'query_builder' => function (FootballMatchRepository $footballMatchRepository) use ($options) {
+                        $queryBuilder = $footballMatchRepository->createQueryBuilder('f')
+                            ->leftJoin('f.team', 't')
+                            ->addSelect('t')
+                            ->leftJoin('t.club', 'c')
+                            ->addSelect('c')
+                            ->andWhere('f.matchType = :matchType')
                             ->setParameter('matchType', 'aller')
-                            ->orderBy('m.matchDate', 'DESC');
-                    },
+                            ->orderBy('f.matchDate', 'DESC')
+                            ->addOrderBy('f.startTime', 'DESC');
 
-                    // Texte affiché dans la liste déroulante.
-                    'choice_label' => function (FootballMatch $match) {
-                        $date = $match->getMatchDate()?->format('d/m/Y') ?? 'Date inconnue';
-                        $team = $match->getTeam()?->getName() ?? 'Équipe inconnue';
-                        $opponent = $match->getOpponent() ?? 'Adversaire inconnu';
+                        $user = $options['current_user'];
 
-                        return $date . ' - ' . $team . ' vs ' . $opponent;
+                        if (!$user instanceof AppUser) {
+                            return $queryBuilder->andWhere('1 = 0');
+                        }
+
+                        $roles = $user->getRoles();
+
+                        if (in_array('ROLE_SUPER_ADMIN', $roles, true)) {
+                            return $queryBuilder;
+                        }
+
+                        if (in_array('ROLE_ADMIN', $roles, true)) {
+                            if ($user->getClub() === null) {
+                                return $queryBuilder->andWhere('1 = 0');
+                            }
+
+                            return $queryBuilder
+                                ->andWhere('t.club = :club')
+                                ->setParameter('club', $user->getClub());
+                        }
+
+                        if (in_array('ROLE_COACH', $roles, true)) {
+                            $coachedTeams = $user->getCoachedTeams()->toArray();
+
+                            if (count($coachedTeams) === 0) {
+                                return $queryBuilder->andWhere('1 = 0');
+                            }
+
+                            return $queryBuilder
+                                ->andWhere('f.team IN (:teams)')
+                                ->setParameter('teams', $coachedTeams);
+                        }
+
+                        return $queryBuilder->andWhere('1 = 0');
                     },
+                    'choice_label' => function (FootballMatch $footballMatch) {
+                        $team = $footballMatch->getTeam()?->getName() ?? 'Équipe inconnue';
+                        $date = $footballMatch->getMatchDate()?->format('d/m/Y') ?? 'Date inconnue';
+
+                        return $date . ' - ' . $team . ' vs ' . $footballMatch->getOpponent();
+                    },
+                    'placeholder' => 'Aucun match aller associé',
+                    'required' => false,
+                    'label' => 'Match aller associé',
+                    'help' => 'À renseigner seulement si le type de match est "Match retour".',
                 ])
             ;
         }
@@ -141,8 +215,7 @@ class FootballMatchType extends AbstractType
         $resolver->setDefaults([
             'data_class' => FootballMatch::class,
             'is_return_creation' => false,
+            'current_user' => null,
         ]);
-
-        $resolver->setAllowedTypes('is_return_creation', 'bool');
     }
 }

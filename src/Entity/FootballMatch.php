@@ -476,11 +476,6 @@ class FootballMatch
         return $this->convocations;
     }
 
-    public function getConvocationsCount(): int
-    {
-        return $this->convocations->count();
-    }
-
     public function addConvocation(Convocation $convocation): static
     {
         if (!$this->convocations->contains($convocation)) {

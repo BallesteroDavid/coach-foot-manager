@@ -57,35 +57,16 @@
                     dont {{ training_session.presentAttendancesCount }} présent(s)
                 </td>
             </tr>
-
-            <tr>
-                <th>Créé par</th>
-                <td>{{ training_session.createdBy ? training_session.createdBy.fullName : 'Non renseigné' }}</td>
-            </tr>
-
-            <tr>
-                <th>Créé le</th>
-                <td>{{ training_session.createdAt ? training_session.createdAt|date('d/m/Y H:i') : '-' }}</td>
-            </tr>
-
-            <tr>
-                <th>Modifié le</th>
-                <td>{{ training_session.updatedAt ? training_session.updatedAt|date('d/m/Y H:i') : '-' }}</td>
-            </tr>
         </tbody>
     </table>
 
     <h2>Présences</h2>
 
     <p>
-        <a href="{{ path('app_training_attendance_new_from_session', { id: training_session.id }) }}">
-            Ajouter une présence
+        <a href="{{ path('app_training_attendance_manage_session', { id: training_session.id }) }}">
+            Gérer la feuille de présence
         </a>
     </p>
-
-    {{ include('training_attendance/_mark_all_present_form.html.twig', {
-        training_session: training_session
-    }) }}
 
     {% if training_session.attendances|length > 0 %}
         <table class="table">

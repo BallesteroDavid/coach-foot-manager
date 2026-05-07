@@ -71,16 +71,6 @@
                 <th>Nombre d'entraînements</th>
                 <td>{{ team.trainingSessions|length }}</td>
             </tr>
-
-            <tr>
-                <th>Créée le</th>
-                <td>{{ team.createdAt ? team.createdAt|date('d/m/Y H:i') : '-' }}</td>
-            </tr>
-
-            <tr>
-                <th>Modifiée le</th>
-                <td>{{ team.updatedAt ? team.updatedAt|date('d/m/Y H:i') : '-' }}</td>
-            </tr>
         </tbody>
     </table>
 

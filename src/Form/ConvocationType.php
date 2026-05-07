@@ -2,9 +2,11 @@
 
 namespace App\Form;
 
+use App\Entity\AppUser;
 use App\Entity\Convocation;
 use App\Entity\FootballMatch;
 use App\Entity\Player;
+use App\Repository\FootballMatchRepository;
 use App\Repository\PlayerRepository;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Component\Form\AbstractType;
@@ -20,6 +22,51 @@ class ConvocationType extends AbstractType
         if (!$options['hide_football_match']) {
             $builder->add('footballMatch', EntityType::class, [
                 'class' => FootballMatch::class,
+                'query_builder' => function (FootballMatchRepository $footballMatchRepository) use ($options) {
+                    $queryBuilder = $footballMatchRepository->createQueryBuilder('m')
+                        ->leftJoin('m.team', 't')
+                        ->addSelect('t')
+                        ->leftJoin('t.club', 'club')
+                        ->addSelect('club')
+                        ->orderBy('m.matchDate', 'DESC')
+                        ->addOrderBy('m.startTime', 'DESC');
+
+                    $user = $options['current_user'];
+
+                    if (!$user instanceof AppUser) {
+                        return $queryBuilder->andWhere('1 = 0');
+                    }
+
+                    $roles = $user->getRoles();
+
+                    if (in_array('ROLE_SUPER_ADMIN', $roles, true)) {
+                        return $queryBuilder;
+                    }
+
+                    if (in_array('ROLE_ADMIN', $roles, true)) {
+                        if ($user->getClub() === null) {
+                            return $queryBuilder->andWhere('1 = 0');
+                        }
+
+                        return $queryBuilder
+                            ->andWhere('t.club = :club')
+                            ->setParameter('club', $user->getClub());
+                    }
+
+                    if (in_array('ROLE_COACH', $roles, true)) {
+                        $coachedTeams = $user->getCoachedTeams()->toArray();
+
+                        if (count($coachedTeams) === 0) {
+                            return $queryBuilder->andWhere('1 = 0');
+                        }
+
+                        return $queryBuilder
+                            ->andWhere('m.team IN (:teams)')
+                            ->setParameter('teams', $coachedTeams);
+                    }
+
+                    return $queryBuilder->andWhere('1 = 0');
+                },
                 'choice_label' => function (FootballMatch $match) {
                     $date = $match->getMatchDate()?->format('d/m/Y') ?? 'Date inconnue';
                     $team = $match->getTeam()?->getName() ?? 'Équipe inconnue';
@@ -37,6 +84,10 @@ class ConvocationType extends AbstractType
                 'class' => Player::class,
                 'query_builder' => function (PlayerRepository $playerRepository) use ($options) {
                     $queryBuilder = $playerRepository->createQueryBuilder('p')
+                        ->leftJoin('p.team', 't')
+                        ->addSelect('t')
+                        ->leftJoin('t.club', 'club')
+                        ->addSelect('club')
                         ->orderBy('p.lastName', 'ASC')
                         ->addOrderBy('p.firstName', 'ASC');
 
@@ -44,12 +95,46 @@ class ConvocationType extends AbstractType
                         $options['football_match'] instanceof FootballMatch
                         && $options['football_match']->getTeam() !== null
                     ) {
-                        $queryBuilder
+                        return $queryBuilder
                             ->andWhere('p.team = :team')
                             ->setParameter('team', $options['football_match']->getTeam());
                     }
 
-                    return $queryBuilder;
+                    $user = $options['current_user'];
+
+                    if (!$user instanceof AppUser) {
+                        return $queryBuilder->andWhere('1 = 0');
+                    }
+
+                    $roles = $user->getRoles();
+
+                    if (in_array('ROLE_SUPER_ADMIN', $roles, true)) {
+                        return $queryBuilder;
+                    }
+
+                    if (in_array('ROLE_ADMIN', $roles, true)) {
+                        if ($user->getClub() === null) {
+                            return $queryBuilder->andWhere('1 = 0');
+                        }
+
+                        return $queryBuilder
+                            ->andWhere('t.club = :club')
+                            ->setParameter('club', $user->getClub());
+                    }
+
+                    if (in_array('ROLE_COACH', $roles, true)) {
+                        $coachedTeams = $user->getCoachedTeams()->toArray();
+
+                        if (count($coachedTeams) === 0) {
+                            return $queryBuilder->andWhere('1 = 0');
+                        }
+
+                        return $queryBuilder
+                            ->andWhere('p.team IN (:teams)')
+                            ->setParameter('teams', $coachedTeams);
+                    }
+
+                    return $queryBuilder->andWhere('1 = 0');
                 },
                 'choice_label' => function (Player $player) {
                     $team = $player->getTeam()?->getName() ?? 'Sans équipe';
@@ -83,6 +168,7 @@ class ConvocationType extends AbstractType
             'data_class' => Convocation::class,
             'hide_football_match' => false,
             'football_match' => null,
+            'current_user' => null,
         ]);
     }
 }

@@ -44,21 +44,6 @@
                 <th>Commentaire</th>
                 <td>{{ training_attendance.comment ?: 'Aucun commentaire' }}</td>
             </tr>
-
-            <tr>
-                <th>Modifié par</th>
-                <td>{{ training_attendance.updatedBy ? training_attendance.updatedBy.fullName : 'Non renseigné' }}</td>
-            </tr>
-
-            <tr>
-                <th>Créée le</th>
-                <td>{{ training_attendance.createdAt ? training_attendance.createdAt|date('d/m/Y H:i') : '-' }}</td>
-            </tr>
-
-            <tr>
-                <th>Modifiée le</th>
-                <td>{{ training_attendance.updatedAt ? training_attendance.updatedAt|date('d/m/Y H:i') : '-' }}</td>
-            </tr>
         </tbody>
     </table>
 

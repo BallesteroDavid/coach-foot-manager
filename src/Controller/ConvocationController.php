@@ -13,34 +13,61 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[Route('/convocation')]
+#[IsGranted('ROLE_COACH')]
 final class ConvocationController extends AbstractController
 {
     #[Route(name: 'app_convocation_index', methods: ['GET'])]
     public function index(ConvocationRepository $convocationRepository): Response
     {
+        $currentUser = $this->getUser();
+
+        if (!$currentUser instanceof AppUser) {
+            throw $this->createAccessDeniedException();
+        }
+
         return $this->render('convocation/index.html.twig', [
-            'convocations' => $convocationRepository->findBy([], [
-                'createdAt' => 'DESC',
-            ]),
+            'convocations' => $convocationRepository->findVisibleForUser($currentUser),
         ]);
     }
 
     #[Route('/new', name: 'app_convocation_new', methods: ['GET', 'POST'])]
     public function new(Request $request, EntityManagerInterface $entityManager): Response
     {
-        $convocation = new Convocation();
-
         $currentUser = $this->getUser();
-        if ($currentUser instanceof AppUser) {
-            $convocation->setCreatedBy($currentUser);
+
+        if (!$currentUser instanceof AppUser) {
+            throw $this->createAccessDeniedException();
         }
 
-        $form = $this->createForm(ConvocationType::class, $convocation);
+        $convocation = new Convocation();
+        $convocation->setCreatedBy($currentUser);
+
+        $form = $this->createForm(ConvocationType::class, $convocation, [
+            'current_user' => $currentUser,
+        ]);
+
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
+            if (!$this->canAccessConvocation($convocation)) {
+                throw $this->createAccessDeniedException("Vous ne pouvez pas créer cette convocation.");
+            }
+
+            if (!$this->isPlayerInMatchTeam($convocation)) {
+                $this->addFlash(
+                    'danger',
+                    "Le joueur sélectionné n'appartient pas à l'équipe du match."
+                );
+
+                return $this->render('convocation/new.html.twig', [
+                    'convocation' => $convocation,
+                    'form' => $form,
+                ]);
+            }
+
             try {
                 $entityManager->persist($convocation);
                 $entityManager->flush();
@@ -68,6 +95,10 @@ final class ConvocationController extends AbstractController
         FootballMatch $footballMatch,
         EntityManagerInterface $entityManager
     ): Response {
+        if (!$this->canAccessFootballMatch($footballMatch)) {
+            throw $this->createAccessDeniedException("Vous ne pouvez pas créer des convocations pour ce match.");
+        }
+
         if (!$this->isCsrfTokenValid('create_convocations_for_team'.$footballMatch->getId(), $request->getPayload()->getString('_token'))) {
             $this->addFlash('danger', 'Token de sécurité invalide.');
 
@@ -134,23 +165,46 @@ final class ConvocationController extends AbstractController
         FootballMatch $footballMatch,
         EntityManagerInterface $entityManager
     ): Response {
-        $convocation = new Convocation();
-        $convocation->setFootballMatch($footballMatch);
+        if (!$this->canAccessFootballMatch($footballMatch)) {
+            throw $this->createAccessDeniedException("Vous ne pouvez pas créer une convocation pour ce match.");
+        }
 
         $currentUser = $this->getUser();
 
-        if ($currentUser instanceof AppUser) {
-            $convocation->setCreatedBy($currentUser);
+        if (!$currentUser instanceof AppUser) {
+            throw $this->createAccessDeniedException();
         }
+
+        $convocation = new Convocation();
+        $convocation->setFootballMatch($footballMatch);
+        $convocation->setCreatedBy($currentUser);
 
         $form = $this->createForm(ConvocationType::class, $convocation, [
             'hide_football_match' => true,
             'football_match' => $footballMatch,
+            'current_user' => $currentUser,
         ]);
 
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
+            if (!$this->canAccessConvocation($convocation)) {
+                throw $this->createAccessDeniedException("Vous ne pouvez pas créer cette convocation.");
+            }
+
+            if (!$this->isPlayerInMatchTeam($convocation)) {
+                $this->addFlash(
+                    'danger',
+                    "Le joueur sélectionné n'appartient pas à l'équipe du match."
+                );
+
+                return $this->render('convocation/new.html.twig', [
+                    'convocation' => $convocation,
+                    'form' => $form,
+                    'football_match' => $footballMatch,
+                ]);
+            }
+
             try {
                 $entityManager->persist($convocation);
                 $entityManager->flush();
@@ -178,18 +232,58 @@ final class ConvocationController extends AbstractController
     #[Route('/{id}', name: 'app_convocation_show', methods: ['GET'])]
     public function show(Convocation $convocation): Response
     {
+        if (!$this->canAccessConvocation($convocation)) {
+            throw $this->createAccessDeniedException("Vous ne pouvez pas accéder à cette convocation.");
+        }
+
         return $this->render('convocation/show.html.twig', [
             'convocation' => $convocation,
         ]);
     }
 
     #[Route('/{id}/edit', name: 'app_convocation_edit', methods: ['GET', 'POST'])]
-    public function edit(Request $request, Convocation $convocation, EntityManagerInterface $entityManager): Response
-    {
-        $form = $this->createForm(ConvocationType::class, $convocation);
+    public function edit(
+        Request $request,
+        Convocation $convocation,
+        EntityManagerInterface $entityManager
+    ): Response {
+        if (!$this->canAccessConvocation($convocation)) {
+            throw $this->createAccessDeniedException("Vous ne pouvez pas modifier cette convocation.");
+        }
+
+        $currentUser = $this->getUser();
+
+        if (!$currentUser instanceof AppUser) {
+            throw $this->createAccessDeniedException();
+        }
+
+        $footballMatch = $convocation->getFootballMatch();
+
+        $form = $this->createForm(ConvocationType::class, $convocation, [
+            'hide_football_match' => true,
+            'football_match' => $footballMatch,
+            'current_user' => $currentUser,
+        ]);
+
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
+            if (!$this->canAccessConvocation($convocation)) {
+                throw $this->createAccessDeniedException("Vous ne pouvez pas modifier cette convocation.");
+            }
+
+            if (!$this->isPlayerInMatchTeam($convocation)) {
+                $this->addFlash(
+                    'danger',
+                    "Le joueur sélectionné n'appartient pas à l'équipe du match."
+                );
+
+                return $this->render('convocation/edit.html.twig', [
+                    'convocation' => $convocation,
+                    'form' => $form,
+                ]);
+            }
+
             $convocation->setUpdatedAt(new \DateTimeImmutable());
 
             try {
@@ -213,8 +307,17 @@ final class ConvocationController extends AbstractController
     }
 
     #[Route('/{id}', name: 'app_convocation_delete', methods: ['POST'])]
-    public function delete(Request $request, Convocation $convocation, EntityManagerInterface $entityManager): Response
-    {
+    public function delete(
+        Request $request,
+        Convocation $convocation,
+        EntityManagerInterface $entityManager
+    ): Response {
+        if (!$this->canAccessConvocation($convocation)) {
+            throw $this->createAccessDeniedException("Vous ne pouvez pas supprimer cette convocation.");
+        }
+
+        $footballMatch = $convocation->getFootballMatch();
+
         if ($this->isCsrfTokenValid('delete'.$convocation->getId(), $request->getPayload()->getString('_token'))) {
             $entityManager->remove($convocation);
             $entityManager->flush();
@@ -222,6 +325,80 @@ final class ConvocationController extends AbstractController
             $this->addFlash('success', 'La convocation a bien été supprimée.');
         }
 
+        if ($footballMatch !== null) {
+            return $this->redirectToRoute('app_football_match_show', [
+                'id' => $footballMatch->getId(),
+            ], Response::HTTP_SEE_OTHER);
+        }
+
         return $this->redirectToRoute('app_convocation_index', [], Response::HTTP_SEE_OTHER);
+    }
+
+    private function canAccessConvocation(Convocation $convocation): bool
+    {
+        $footballMatch = $convocation->getFootballMatch();
+
+        if ($footballMatch === null) {
+            return false;
+        }
+
+        return $this->canAccessFootballMatch($footballMatch);
+    }
+
+    private function canAccessFootballMatch(FootballMatch $footballMatch): bool
+    {
+        $currentUser = $this->getUser();
+
+        if (!$currentUser instanceof AppUser) {
+            return false;
+        }
+
+        if ($this->isGranted('ROLE_SUPER_ADMIN')) {
+            return true;
+        }
+
+        $team = $footballMatch->getTeam();
+
+        if ($team === null) {
+            return false;
+        }
+
+        if ($this->isGranted('ROLE_ADMIN')) {
+            $userClub = $currentUser->getClub();
+            $teamClub = $team->getClub();
+
+            return $userClub !== null
+                && $teamClub !== null
+                && $userClub->getId() === $teamClub->getId();
+        }
+
+        if ($this->isGranted('ROLE_COACH')) {
+            foreach ($currentUser->getCoachedTeams() as $coachedTeam) {
+                if ($coachedTeam->getId() === $team->getId()) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    private function isPlayerInMatchTeam(Convocation $convocation): bool
+    {
+        $footballMatch = $convocation->getFootballMatch();
+        $player = $convocation->getPlayer();
+
+        if ($footballMatch === null || $player === null) {
+            return false;
+        }
+
+        $matchTeam = $footballMatch->getTeam();
+        $playerTeam = $player->getTeam();
+
+        if ($matchTeam === null || $playerTeam === null) {
+            return false;
+        }
+
+        return $matchTeam->getId() === $playerTeam->getId();
     }
 }
