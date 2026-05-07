@@ -1,5 +1,5 @@
 <form method="post" action="{{ path('app_training_session_delete', { id: training_session.id }) }}" onsubmit="return confirm('Voulez-vous vraiment supprimer cet entraînement ?');">
     <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ training_session.id) }}">
 
-    <button class="btn">Supprimer</button>
+    <button class="btn btn-danger">Supprimer</button>
 </form>
