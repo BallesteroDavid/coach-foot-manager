@@ -1,114 +1,180 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Liste des matchs{% endblock %}
+{% block title %}Matchs{% endblock %}
 
 {% block body %}
-    <h1>Liste des matchs</h1>
+    <div class="page-container">
 
-    <a href="{{ path('app_football_match_new') }}">Créer un match</a>
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">Matchs</h1>
+                <p class="page-subtitle">
+                    Liste des matchs auxquels tu as accès.
+                </p>
+            </div>
 
-    {% set locationLabels = {
-        home: 'Domicile',
-        away: 'Extérieur',
-        neutral: 'Terrain neutre'
-    } %}
+            <div class="top-actions">
+                {% if is_granted('ROLE_COACH') %}
+                    <a href="{{ path('app_football_match_new') }}" class="btn btn-primary">
+                        Créer un match
+                    </a>
+                {% endif %}
+            </div>
+        </div>
 
-    {% set statusLabels = {
-        planned: 'Planifié',
-        in_progress: 'En cours',
-        finished: 'Terminé',
-        cancelled: 'Annulé'
-    } %}
+        {% set locationLabels = {
+            home: 'Domicile',
+            away: 'Extérieur',
+            neutral: 'Terrain neutre'
+        } %}
 
-    {% set matchTypeLabels = {
-        simple: 'Match simple',
-        aller: 'Match aller',
-        retour: 'Match retour'
-    } %}
+        {% set statusLabels = {
+            planned: 'Planifié',
+            in_progress: 'En cours',
+            finished: 'Terminé',
+            cancelled: 'Annulé'
+        } %}
 
-    <table class="table">
-        <thead>
-            <tr>
-                <th>Équipe</th>
-                <th>Date</th>
-                <th>Heure</th>
-                <th>Adversaire</th>
-                <th>Lieu</th>
-                <th>Type de lieu</th>
-                <th>Type de match</th>
-                <th>Compétition</th>
-                <th>Score</th>
-                <th>Résultat</th>
-                <th>Statut</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
+        {% set statusClasses = {
+            planned: 'badge',
+            in_progress: 'badge-warning',
+            finished: 'badge-success',
+            cancelled: 'badge-danger'
+        } %}
 
-        <tbody>
-            {% for football_match in football_matches %}
-                <tr>
-                    <td>{{ football_match.team.name }}</td>
+        {% set matchTypeLabels = {
+            simple: 'Match simple',
+            aller: 'Match aller',
+            retour: 'Match retour'
+        } %}
 
-                    <td>
-                        {{ football_match.matchDate ? football_match.matchDate|date('d/m/Y') : '-' }}
-                    </td>
+        {% if football_matches is empty %}
+            <div class="empty-state">
+                <strong>Aucun match trouvé.</strong>
+                <p>
+                    {% if is_granted('ROLE_COACH') %}
+                        Tu peux créer un premier match pour une équipe.
+                    {% else %}
+                        Aucun match n’est disponible pour le moment.
+                    {% endif %}
+                </p>
+            </div>
+        {% else %}
+            <div class="card">
+                <div class="table-wrapper">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Équipe</th>
+                                <th>Date</th>
+                                <th>Heure</th>
+                                <th>Adversaire</th>
+                                <th>Lieu</th>
+                                <th>Type de lieu</th>
+                                <th>Type de match</th>
+                                <th>Compétition</th>
+                                <th>Score</th>
+                                <th>Résultat</th>
+                                <th>Statut</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
 
-                    <td>
-                        {{ football_match.startTime ? football_match.startTime|date('H:i') : '-' }}
-                    </td>
+                        <tbody>
+                            {% for football_match in football_matches %}
+                                <tr>
+                                    <td>
+                                        {% if football_match.team %}
+                                            <span class="badge">
+                                                {{ football_match.team.name }}
+                                            </span>
+                                        {% else %}
+                                            <span class="badge badge-muted">
+                                                Aucune équipe
+                                            </span>
+                                        {% endif %}
+                                    </td>
 
-                    <td>{{ football_match.opponent }}</td>
+                                    <td>
+                                        <strong>
+                                            {{ football_match.matchDate ? football_match.matchDate|date('d/m/Y') : '-' }}
+                                        </strong>
+                                    </td>
 
-                    <td>{{ football_match.location }}</td>
+                                    <td>
+                                        {{ football_match.startTime ? football_match.startTime|date('H:i') : '-' }}
+                                    </td>
 
-                    <td>
-                        {{ locationLabels[football_match.locationType]|default(football_match.locationType) }}
-                    </td>
+                                    <td>
+                                        {{ football_match.opponent ?: 'Non renseigné' }}
+                                    </td>
 
-                    <td>
-                        {{ matchTypeLabels[football_match.matchType]|default(football_match.matchType) }}
+                                    <td>
+                                        {{ football_match.location ?: 'Non renseigné' }}
+                                    </td>
 
-                        {% if football_match.matchType == 'retour' and football_match.firstMatch %}
-                            <br>
-                            <small>
-                                Retour du match du {{ football_match.firstMatch.matchDate|date('d/m/Y') }}
-                            </small>
-                        {% endif %}
+                                    <td>
+                                        {{ locationLabels[football_match.locationType]|default(football_match.locationType ?: 'Non renseigné') }}
+                                    </td>
 
-                        {% if football_match.matchType == 'aller' and football_match.returnMatches|length > 0 %}
-                            <br>
-                            <small>
-                                {{ football_match.returnMatches|length }} match retour associé
-                            </small>
-                        {% endif %}
-                    </td>
+                                    <td>
+                                        <span class="badge">
+                                            {{ matchTypeLabels[football_match.matchType]|default(football_match.matchType ?: 'Non renseigné') }}
+                                        </span>
 
-                    <td>
-                        {{ football_match.competition ?: '-' }}
-                    </td>
+                                        {% if football_match.matchType == 'retour' and football_match.firstMatch %}
+                                            <br>
+                                            <small>
+                                                Retour du match du {{ football_match.firstMatch.matchDate|date('d/m/Y') }}
+                                            </small>
+                                        {% endif %}
 
-                    <td>
-                        {{ football_match.scoreLabel }}
-                    </td>
+                                        {% if football_match.matchType == 'aller' and football_match.returnMatches|length > 0 %}
+                                            <br>
+                                            <small>
+                                                {{ football_match.returnMatches|length }} match retour associé
+                                            </small>
+                                        {% endif %}
+                                    </td>
 
-                    <td>
-                        {{ football_match.resultLabel }}
-                    </td>
+                                    <td>
+                                        {{ football_match.competition ?: '-' }}
+                                    </td>
 
-                    <td>
-                        {{ statusLabels[football_match.status]|default(football_match.status) }}
-                    </td>
+                                    <td>
+                                        <strong>{{ football_match.scoreLabel }}</strong>
+                                    </td>
 
-                    <td>
-                        <a href="{{ path('app_football_match_show', { id: football_match.id }) }}">Voir</a>
-                        <a href="{{ path('app_football_match_edit', { id: football_match.id }) }}">Modifier</a>
-                    </td>
-                </tr>
-            {% else %}
-                <tr>
-                    <td colspan="12">Aucun match trouvé.</td>
-                </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+                                    <td>
+                                        {{ football_match.resultLabel }}
+                                    </td>
+
+                                    <td>
+                                        <span class="badge {{ statusClasses[football_match.status]|default('badge-muted') }}">
+                                            {{ statusLabels[football_match.status]|default(football_match.status ?: 'Non renseigné') }}
+                                        </span>
+                                    </td>
+
+                                    <td>
+                                        <div class="actions">
+                                            <a href="{{ path('app_football_match_show', { id: football_match.id }) }}" class="btn btn-secondary">
+                                                Voir
+                                            </a>
+
+                                            {% if is_granted('ROLE_COACH') %}
+                                                <a href="{{ path('app_football_match_edit', { id: football_match.id }) }}" class="btn btn-primary">
+                                                    Modifier
+                                                </a>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        {% endif %}
+
+    </div>
 {% endblock %}

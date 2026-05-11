@@ -18,6 +18,8 @@ class PlayerType extends AbstractType
 {
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
+        $availableTeams = $options['available_teams'];
+
         $builder
             ->add('firstName', null, [
                 'label' => 'Prénom',
@@ -90,6 +92,7 @@ class PlayerType extends AbstractType
 
             ->add('team', EntityType::class, [
                 'class' => Team::class,
+                'choices' => $availableTeams,
                 'choice_label' => 'name',
                 'placeholder' => 'Choisir une équipe',
                 'required' => false,
@@ -102,6 +105,9 @@ class PlayerType extends AbstractType
     {
         $resolver->setDefaults([
             'data_class' => Player::class,
+            'available_teams' => [],
         ]);
+
+        $resolver->setAllowedTypes('available_teams', 'array');
     }
 }

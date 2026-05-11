@@ -3,9 +3,9 @@
 {% block title %}Tableau de bord{% endblock %}
 
 {% block body %}
-    <main class="dashboard-container">
+    <div class="dashboard-container">
 
-        <section class="dashboard-header">
+        <section class="dashboard-header card">
             <div>
                 <span class="dashboard-badge">Tableau de bord</span>
 
@@ -13,7 +13,7 @@
 
                 {% if app.user %}
                     <p>
-                        Connecté avec <strong>{{ app.user.email }}</strong>
+                        Connecté avec <strong>{{ app.user.fullName ?: app.user.userIdentifier }}</strong>
                     </p>
                 {% else %}
                     <p>
@@ -21,59 +21,77 @@
                     </p>
                 {% endif %}
             </div>
-
-            <a href="{{ path('app_logout') }}" class="logout-link">
-                Se déconnecter
-            </a>
         </section>
 
         <section class="dashboard-section">
             <div class="section-title">
                 <h2>Actions rapides</h2>
-                <p>Les actions principales pour gérer ton club rapidement.</p>
+                <p>Les actions principales disponibles selon ton rôle.</p>
             </div>
 
             <div class="actions-grid">
-                <a href="{{ path('app_club_index') }}" class="dashboard-card">
-                    <span class="card-icon">🏟️</span>
-                    <h3>Gérer le club</h3>
-                    <p>Voir et modifier les informations du club.</p>
-                </a>
+                {% if is_granted('ROLE_ADMIN') %}
+                    <a href="{{ path('app_club_index') }}" class="dashboard-card">
+                        <span class="card-icon">🏟️</span>
+                        <h3>Gérer le club</h3>
+                        <p>Voir et modifier les informations du club.</p>
+                    </a>
 
-                <a href="{{ path('app_team_index') }}" class="dashboard-card">
-                    <span class="card-icon">🛡️</span>
-                    <h3>Gérer les équipes</h3>
-                    <p>Créer et organiser les équipes du club.</p>
-                </a>
+                    <a href="{{ path('app_team_new') }}" class="dashboard-card">
+                        <span class="card-icon">🛡️</span>
+                        <h3>Créer une équipe</h3>
+                        <p>Ajouter une nouvelle équipe au club.</p>
+                    </a>
 
-                <a href="#" class="dashboard-card">
-                    <span class="card-icon">⚽</span>
-                    <h3>Créer un match</h3>
-                    <p>Planifier un nouveau match pour une équipe.</p>
-                </a>
+                    <a href="{{ path('app_player_new') }}" class="dashboard-card">
+                        <span class="card-icon">👤</span>
+                        <h3>Ajouter un joueur</h3>
+                        <p>Créer une nouvelle fiche joueur.</p>
+                    </a>
 
-                <a href="#" class="dashboard-card">
-                    <span class="card-icon">🏃</span>
-                    <h3>Créer un entraînement</h3>
-                    <p>Ajouter une séance à venir au calendrier.</p>
-                </a>
+                    <a href="{{ path('app_user_index') }}" class="dashboard-card">
+                        <span class="card-icon">👥</span>
+                        <h3>Utilisateurs</h3>
+                        <p>Gérer les comptes du club.</p>
+                    </a>
+                {% endif %}
 
-                <a href="#" class="dashboard-card">
-                    <span class="card-icon">👤</span>
-                    <h3>Ajouter un joueur</h3>
-                    <p>Créer une nouvelle fiche joueur dans le club.</p>
-                </a>
+                {% if is_granted('ROLE_COACH') %}
+                    <a href="{{ path('app_team_index') }}" class="dashboard-card">
+                        <span class="card-icon">🧢</span>
+                        <h3>Mes équipes</h3>
+                        <p>Voir les équipes auxquelles tu as accès.</p>
+                    </a>
 
-                <a href="#" class="dashboard-card">
-                    <span class="card-icon">📋</span>
-                    <h3>Voir les convocations</h3>
-                    <p>Préparer ou suivre les joueurs convoqués.</p>
-                </a>
+                    <a href="{{ path('app_football_match_new') }}" class="dashboard-card">
+                        <span class="card-icon">⚽</span>
+                        <h3>Créer un match</h3>
+                        <p>Planifier un nouveau match pour une équipe.</p>
+                    </a>
+
+                    <a href="{{ path('app_training_session_new') }}" class="dashboard-card">
+                        <span class="card-icon">🏃</span>
+                        <h3>Créer un entraînement</h3>
+                        <p>Ajouter une séance à venir.</p>
+                    </a>
+
+                    <a href="{{ path('app_convocation_index') }}" class="dashboard-card">
+                        <span class="card-icon">📋</span>
+                        <h3>Convocations</h3>
+                        <p>Préparer ou suivre les joueurs convoqués.</p>
+                    </a>
+
+                    <a href="{{ path('app_training_attendance_index') }}" class="dashboard-card">
+                        <span class="card-icon">✅</span>
+                        <h3>Présences</h3>
+                        <p>Consulter ou gérer les présences aux entraînements.</p>
+                    </a>
+                {% endif %}
             </div>
         </section>
 
         <section class="dashboard-two-columns">
-            <div class="dashboard-section">
+            <div class="dashboard-section card">
                 <div class="section-title">
                     <h2>À faire</h2>
                     <p>Les tâches importantes apparaîtront ici.</p>
@@ -92,7 +110,7 @@
                 </div>
             </div>
 
-            <div class="dashboard-section">
+            <div class="dashboard-section card">
                 <div class="section-title">
                     <h2>Prochain événement</h2>
                     <p>Le prochain match ou entraînement sera affiché ici.</p>
@@ -114,26 +132,26 @@
 
             <div class="stats-grid">
                 <div class="stat-card">
-                    <strong>0</strong>
+                    <strong>{{ players_count }}</strong>
                     <span>Joueurs</span>
                 </div>
 
                 <div class="stat-card">
-                    <strong>0</strong>
+                    <strong>{{ teams_count }}</strong>
                     <span>Équipes</span>
                 </div>
 
                 <div class="stat-card">
-                    <strong>0</strong>
+                    <strong>{{ upcoming_matches_count }}</strong>
                     <span>Matchs à venir</span>
                 </div>
 
                 <div class="stat-card">
-                    <strong>0</strong>
+                    <strong>{{ convocations_count }}</strong>
                     <span>Convocations</span>
                 </div>
             </div>
         </section>
 
-    </main>
+    </div>
 {% endblock %}

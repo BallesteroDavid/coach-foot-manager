@@ -23,7 +23,7 @@ class TrainingAttendanceRepository extends ServiceEntityRepository
      * ROLE_SUPER_ADMIN :
      * - voit toutes les présences
      *
-     * ROLE_ADMIN :
+     * ROLE_ADMIN / ROLE_ADMIN_CLUB :
      * - voit les présences des entraînements des équipes de son club
      *
      * ROLE_COACH :
@@ -52,7 +52,10 @@ class TrainingAttendanceRepository extends ServiceEntityRepository
                 ->getResult();
         }
 
-        if (in_array('ROLE_ADMIN', $roles, true)) {
+        if (
+            in_array('ROLE_ADMIN', $roles, true)
+            || in_array('ROLE_ADMIN_CLUB', $roles, true)
+        ) {
             $club = $user->getClub();
 
             if ($club === null) {

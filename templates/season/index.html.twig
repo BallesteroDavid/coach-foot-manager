@@ -3,55 +3,106 @@
 {% block title %}Saisons{% endblock %}
 
 {% block body %}
-    <h1>Liste des saisons</h1>
+    <div class="page-container">
 
-    <a href="{{ path('app_season_new') }}">Créer une saison</a>
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">Saisons</h1>
+                <p class="page-subtitle">
+                    Gestion des saisons sportives du club.
+                </p>
+            </div>
 
-    {% set statusLabels = {
-        planned: 'Planifiée',
-        active: 'Active',
-        closed: 'Clôturée'
-    } %}
+            <div class="top-actions">
+                <a href="{{ path('app_season_new') }}" class="btn btn-primary">
+                    Créer une saison
+                </a>
+            </div>
+        </div>
 
-    {% if seasons is empty %}
-        <p>Aucune saison enregistrée.</p>
-    {% else %}
-        <table class="table">
-            <thead>
-                <tr>
-                    <th>Nom</th>
-                    <th>Club</th>
-                    <th>Période</th>
-                    <th>Statut</th>
-                    <th>Équipes</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
+        {% set statusLabels = {
+            planned: 'Planifiée',
+            active: 'Active',
+            closed: 'Clôturée'
+        } %}
 
-            <tbody>
-                {% for season in seasons %}
-                    <tr>
-                        <td>{{ season.name }}</td>
+        {% set statusClasses = {
+            planned: 'badge-warning',
+            active: 'badge-success',
+            closed: 'badge-muted'
+        } %}
 
-                        <td>
-                            {{ season.club ? season.club.name : 'Aucun club' }}
-                        </td>
+        {% if seasons is empty %}
+            <div class="empty-state">
+                <strong>Aucune saison enregistrée.</strong>
+                <p>
+                    Crée une première saison pour organiser les équipes et les compétitions.
+                </p>
+            </div>
+        {% else %}
+            <div class="card">
+                <div class="table-wrapper">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Nom</th>
+                                <th>Club</th>
+                                <th>Période</th>
+                                <th>Statut</th>
+                                <th>Équipes</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
 
-                        <td>{{ season.periodLabel }}</td>
+                        <tbody>
+                            {% for season in seasons %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ season.name }}</strong>
+                                    </td>
 
-                        <td>
-                            {{ statusLabels[season.status]|default(season.status) }}
-                        </td>
+                                    <td>
+                                        {% if season.club %}
+                                            {{ season.club.name }}
+                                        {% else %}
+                                            <span class="badge badge-muted">Aucun club</span>
+                                        {% endif %}
+                                    </td>
 
-                        <td>{{ season.teamsCount }}</td>
+                                    <td>
+                                        {{ season.periodLabel }}
+                                    </td>
 
-                        <td>
-                            <a href="{{ path('app_season_show', { id: season.id }) }}">Voir</a>
-                            <a href="{{ path('app_season_edit', { id: season.id }) }}">Modifier</a>
-                        </td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    {% endif %}
+                                    <td>
+                                        <span class="badge {{ statusClasses[season.status]|default('badge-muted') }}">
+                                            {{ statusLabels[season.status]|default(season.status ?: 'Non renseigné') }}
+                                        </span>
+                                    </td>
+
+                                    <td>
+                                        <span class="badge badge-success">
+                                            {{ season.teamsCount }} équipe{{ season.teamsCount > 1 ? 's' : '' }}
+                                        </span>
+                                    </td>
+
+                                    <td>
+                                        <div class="actions">
+                                            <a href="{{ path('app_season_show', { id: season.id }) }}" class="btn btn-secondary">
+                                                Voir
+                                            </a>
+
+                                            <a href="{{ path('app_season_edit', { id: season.id }) }}" class="btn btn-primary">
+                                                Modifier
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        {% endif %}
+
+    </div>
 {% endblock %}

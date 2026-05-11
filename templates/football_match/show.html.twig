@@ -3,221 +3,365 @@
 {% block title %}Détail du match{% endblock %}
 
 {% block body %}
-    <h1>Détail du match</h1>
+    <div class="page-container">
 
-    {% set locationLabels = {
-        home: 'Domicile',
-        away: 'Extérieur',
-        neutral: 'Terrain neutre'
-    } %}
+        {% set locationLabels = {
+            home: 'Domicile',
+            away: 'Extérieur',
+            neutral: 'Terrain neutre'
+        } %}
 
-    {% set statusLabels = {
-        planned: 'Planifié',
-        in_progress: 'En cours',
-        finished: 'Terminé',
-        cancelled: 'Annulé'
-    } %}
+        {% set statusLabels = {
+            planned: 'Planifié',
+            in_progress: 'En cours',
+            finished: 'Terminé',
+            cancelled: 'Annulé'
+        } %}
 
-    {% set matchTypeLabels = {
-        simple: 'Match simple',
-        aller: 'Match aller',
-        retour: 'Match retour'
-    } %}
+        {% set statusClasses = {
+            planned: 'badge',
+            in_progress: 'badge-warning',
+            finished: 'badge-success',
+            cancelled: 'badge-danger'
+        } %}
 
-    <table class="table">
-        <tbody>
-            <tr>
-                <th>Équipe</th>
-                <td>{{ football_match.team.name }}</td>
-            </tr>
+        {% set matchTypeLabels = {
+            simple: 'Match simple',
+            aller: 'Match aller',
+            retour: 'Match retour'
+        } %}
 
-            <tr>
-                <th>Date du match</th>
-                <td>{{ football_match.matchDate ? football_match.matchDate|date('d/m/Y') : '-' }}</td>
-            </tr>
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">
+                    {{ football_match.team ? football_match.team.name : 'Équipe inconnue' }}
+                    vs
+                    {{ football_match.opponent ?: 'Adversaire non renseigné' }}
+                </h1>
 
-            <tr>
-                <th>Heure du match</th>
-                <td>{{ football_match.startTime ? football_match.startTime|date('H:i') : '-' }}</td>
-            </tr>
+                <p class="page-subtitle">
+                    Match du {{ football_match.matchDate ? football_match.matchDate|date('d/m/Y') : 'date non renseignée' }}
+                    à {{ football_match.startTime ? football_match.startTime|date('H:i') : 'heure non renseignée' }}.
+                </p>
+            </div>
 
-            <tr>
-                <th>Adversaire</th>
-                <td>{{ football_match.opponent }}</td>
-            </tr>
+            <div class="top-actions">
+                <a href="{{ path('app_football_match_index') }}" class="btn btn-secondary">
+                    Retour à la liste
+                </a>
 
-            <tr>
-                <th>Lieu</th>
-                <td>{{ football_match.location }}</td>
-            </tr>
-
-            <tr>
-                <th>Type de lieu</th>
-                <td>{{ locationLabels[football_match.locationType]|default(football_match.locationType) }}</td>
-            </tr>
-
-            <tr>
-                <th>Compétition</th>
-                <td>{{ football_match.competition ?: 'Non renseignée' }}</td>
-            </tr>
-
-            <tr>
-                <th>Score</th>
-                <td>{{ football_match.scoreLabel }}</td>
-            </tr>
-
-            <tr>
-                <th>Résultat</th>
-                <td>{{ football_match.resultLabel }}</td>
-            </tr>
-
-            <tr>
-                <th>Total de buts</th>
-                <td>
-                    {% if football_match.totalGoals is not null %}
-                        {{ football_match.totalGoals }}
-                    {% else %}
-                        Non renseigné
-                    {% endif %}
-                </td>
-            </tr>
-
-            <tr>
-                <th>Statut</th>
-                <td>{{ statusLabels[football_match.status]|default(football_match.status) }}</td>
-            </tr>
-
-            <tr>
-                <th>Type de match</th>
-                <td>{{ matchTypeLabels[football_match.matchType]|default(football_match.matchType) }}</td>
-            </tr>
-        </tbody>
-    </table>
-
-    <h2>Convocations</h2>
-
-    <p>
-        <a href="{{ path('app_convocation_new_from_match', { id: football_match.id }) }}">
-            Ajouter une convocation
-        </a>
-    </p>
-
-    {{ include('convocation/_create_for_team_form.html.twig', {
-        football_match: football_match
-    }) }}
-
-    {% if football_match.convocations|length > 0 %}
-        <table class="table">
-            <thead>
-                <tr>
-                    <th>Joueur</th>
-                    <th>Équipe du joueur</th>
-                    <th>Statut</th>
-                    <th>Commentaire</th>
-                    <th>Créée par</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-
-            <tbody>
-                {% for convocation in football_match.convocations %}
-                    <tr>
-                        <td>
-                            {% if convocation.player %}
-                                <a href="{{ path('app_player_show', { id: convocation.player.id }) }}">
-                                    {{ convocation.player.fullName }}
-                                </a>
-                            {% else %}
-                                Joueur inconnu
-                            {% endif %}
-                        </td>
-
-                        <td>
-                            {{ convocation.player and convocation.player.team ? convocation.player.team.name : 'Sans équipe' }}
-                        </td>
-
-                        <td>{{ convocation.statusLabel }}</td>
-
-                        <td>{{ convocation.comment ?: '-' }}</td>
-
-                        <td>
-                            {{ convocation.createdBy ? convocation.createdBy.fullName : 'Non renseigné' }}
-                        </td>
-
-                        <td>
-                            <a href="{{ path('app_convocation_show', { id: convocation.id }) }}">Voir</a>
-                            <a href="{{ path('app_convocation_edit', { id: convocation.id }) }}">Modifier</a>
-                        </td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    {% else %}
-        <p>Aucun joueur convoqué pour ce match.</p>
-    {% endif %}
-
-    {% if football_match.matchType == 'retour' and football_match.firstMatch %}
-        <h2>Match aller associé</h2>
-
-        <p>
-            Ce match est le retour du match :
-            <strong>
-                {{ football_match.firstMatch.team.name }}
-                vs
-                {{ football_match.firstMatch.opponent }}
-            </strong>
-            du {{ football_match.firstMatch.matchDate|date('d/m/Y') }}.
-        </p>
-
-        <a href="{{ path('app_football_match_show', { id: football_match.firstMatch.id }) }}">
-            Voir le match aller
-        </a>
-    {% endif %}
-
-    {% if football_match.matchType == 'aller' and football_match.returnMatches|length > 0 %}
-        <h2>Match retour associé</h2>
-
-        <ul>
-            {% for returnMatch in football_match.returnMatches %}
-                <li>
-                    <strong>
-                        {{ returnMatch.team.name }}
-                        vs
-                        {{ returnMatch.opponent }}
-                    </strong>
-                    du {{ returnMatch.matchDate|date('d/m/Y') }}
-
-                    <a href="{{ path('app_football_match_show', { id: returnMatch.id }) }}">
-                        Voir le match retour
+                {% if is_granted('ROLE_COACH') %}
+                    <a href="{{ path('app_football_match_edit', { id: football_match.id }) }}" class="btn btn-primary">
+                        Modifier
                     </a>
-                </li>
-            {% endfor %}
-        </ul>
-    {% endif %}
-
-    {% if football_match.matchType == 'aller' and football_match.returnMatches|length == 0 %}
-        <p>
-            <a href="{{ path('app_football_match_new_return', { id: football_match.id }) }}">
-                Créer le match retour
-            </a>
-        </p>
-    {% endif %}
-
-    <a href="{{ path('app_football_match_index') }}">Retour à la liste</a>
-    <a href="{{ path('app_football_match_edit', { id: football_match.id }) }}">Modifier</a>
-
-    {% if football_match.returnMatches|length > 0 %}
-        <div class="alert alert-warning">
-            <p>
-                Ce match possède un ou plusieurs matchs retour associés.
-                Il ne peut pas être supprimé directement.
-            </p>
-
-            <p>
-                Supprime d'abord le ou les matchs retour associés avant de supprimer ce match.
-            </p>
+                {% endif %}
+            </div>
         </div>
-    {% else %}
-        {{ include('football_match/_delete_form.html.twig') }}
-    {% endif %}
+
+        <div class="card">
+            <h2 class="card-title">Informations du match</h2>
+
+            <div class="table-wrapper">
+                <table class="table">
+                    <tbody>
+                        <tr>
+                            <th>Équipe</th>
+                            <td>
+                                {% if football_match.team %}
+                                    <span class="badge">{{ football_match.team.name }}</span>
+                                {% else %}
+                                    <span class="badge badge-muted">Aucune équipe</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+
+                        <tr>
+                            <th>Date du match</th>
+                            <td>
+                                <strong>
+                                    {{ football_match.matchDate ? football_match.matchDate|date('d/m/Y') : '-' }}
+                                </strong>
+                            </td>
+                        </tr>
+
+                        <tr>
+                            <th>Heure du match</th>
+                            <td>
+                                {{ football_match.startTime ? football_match.startTime|date('H:i') : '-' }}
+                            </td>
+                        </tr>
+
+                        <tr>
+                            <th>Adversaire</th>
+                            <td>{{ football_match.opponent ?: 'Non renseigné' }}</td>
+                        </tr>
+
+                        <tr>
+                            <th>Lieu</th>
+                            <td>{{ football_match.location ?: 'Non renseigné' }}</td>
+                        </tr>
+
+                        <tr>
+                            <th>Type de lieu</th>
+                            <td>
+                                {{ locationLabels[football_match.locationType]|default(football_match.locationType ?: 'Non renseigné') }}
+                            </td>
+                        </tr>
+
+                        <tr>
+                            <th>Compétition</th>
+                            <td>{{ football_match.competition ?: 'Non renseignée' }}</td>
+                        </tr>
+
+                        <tr>
+                            <th>Score</th>
+                            <td>
+                                <strong>{{ football_match.scoreLabel }}</strong>
+                            </td>
+                        </tr>
+
+                        <tr>
+                            <th>Résultat</th>
+                            <td>{{ football_match.resultLabel }}</td>
+                        </tr>
+
+                        <tr>
+                            <th>Total de buts</th>
+                            <td>
+                                {% if football_match.totalGoals is not null %}
+                                    {{ football_match.totalGoals }}
+                                {% else %}
+                                    Non renseigné
+                                {% endif %}
+                            </td>
+                        </tr>
+
+                        <tr>
+                            <th>Statut</th>
+                            <td>
+                                <span class="badge {{ statusClasses[football_match.status]|default('badge-muted') }}">
+                                    {{ statusLabels[football_match.status]|default(football_match.status ?: 'Non renseigné') }}
+                                </span>
+                            </td>
+                        </tr>
+
+                        <tr>
+                            <th>Type de match</th>
+                            <td>
+                                <span class="badge">
+                                    {{ matchTypeLabels[football_match.matchType]|default(football_match.matchType ?: 'Non renseigné') }}
+                                </span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        {% if football_match.matchType == 'retour' and football_match.firstMatch %}
+            <div class="card">
+                <h2 class="card-title">Match aller associé</h2>
+
+                <p class="card-text">
+                    Ce match est le retour du match :
+                    <strong>
+                        {{ football_match.firstMatch.team.name }}
+                        vs
+                        {{ football_match.firstMatch.opponent }}
+                    </strong>
+                    du {{ football_match.firstMatch.matchDate|date('d/m/Y') }}.
+                </p>
+
+                <div class="actions">
+                    <a href="{{ path('app_football_match_show', { id: football_match.firstMatch.id }) }}" class="btn btn-secondary">
+                        Voir le match aller
+                    </a>
+                </div>
+            </div>
+        {% endif %}
+
+        {% if football_match.matchType == 'aller' and football_match.returnMatches|length > 0 %}
+            <div class="card">
+                <h2 class="card-title">Match retour associé</h2>
+
+                <div class="table-wrapper">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Match</th>
+                                <th>Date</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            {% for returnMatch in football_match.returnMatches %}
+                                <tr>
+                                    <td>
+                                        <strong>
+                                            {{ returnMatch.team.name }}
+                                            vs
+                                            {{ returnMatch.opponent }}
+                                        </strong>
+                                    </td>
+
+                                    <td>
+                                        {{ returnMatch.matchDate ? returnMatch.matchDate|date('d/m/Y') : '-' }}
+                                    </td>
+
+                                    <td>
+                                        <a href="{{ path('app_football_match_show', { id: returnMatch.id }) }}" class="btn btn-secondary">
+                                            Voir
+                                        </a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        {% endif %}
+
+        {% if football_match.matchType == 'aller' and football_match.returnMatches|length == 0 and is_granted('ROLE_COACH') %}
+            <div class="card">
+                <h2 class="card-title">Match retour</h2>
+
+                <p class="card-text">
+                    Aucun match retour n’est encore associé à ce match aller.
+                </p>
+
+                <div class="actions">
+                    <a href="{{ path('app_football_match_new_return', { id: football_match.id }) }}" class="btn btn-primary">
+                        Créer le match retour
+                    </a>
+                </div>
+            </div>
+        {% endif %}
+
+        <section class="dashboard-section">
+            <div class="section-title">
+                <h2>Convocations</h2>
+                <p>Joueurs convoqués pour ce match.</p>
+            </div>
+
+            {% if is_granted('ROLE_COACH') %}
+                <div class="top-actions">
+                    <a href="{{ path('app_convocation_new_from_match', { id: football_match.id }) }}" class="btn btn-primary">
+                        Ajouter une convocation
+                    </a>
+
+                    {{ include('convocation/_create_for_team_form.html.twig', {
+                        football_match: football_match
+                    }) }}
+                </div>
+            {% endif %}
+
+            {% if football_match.convocations|length > 0 %}
+                <div class="card">
+                    <div class="table-wrapper">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Joueur</th>
+                                    <th>Équipe du joueur</th>
+                                    <th>Statut</th>
+                                    <th>Commentaire</th>
+                                    <th>Créée par</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+                                {% for convocation in football_match.convocations %}
+                                    <tr>
+                                        <td>
+                                            {% if convocation.player %}
+                                                <a href="{{ path('app_player_show', { id: convocation.player.id }) }}">
+                                                    <strong>{{ convocation.player.fullName }}</strong>
+                                                </a>
+                                            {% else %}
+                                                Joueur inconnu
+                                            {% endif %}
+                                        </td>
+
+                                        <td>
+                                            {% if convocation.player and convocation.player.team %}
+                                                <span class="badge">{{ convocation.player.team.name }}</span>
+                                            {% else %}
+                                                <span class="badge badge-muted">Sans équipe</span>
+                                            {% endif %}
+                                        </td>
+
+                                        <td>
+                                            <span class="badge">
+                                                {{ convocation.statusLabel }}
+                                            </span>
+                                        </td>
+
+                                        <td>
+                                            {{ convocation.comment ?: '-' }}
+                                        </td>
+
+                                        <td>
+                                            {{ convocation.createdBy ? convocation.createdBy.fullName : 'Non renseigné' }}
+                                        </td>
+
+                                        <td>
+                                            <div class="actions">
+                                                <a href="{{ path('app_convocation_show', { id: convocation.id }) }}" class="btn btn-secondary">
+                                                    Voir
+                                                </a>
+
+                                                {% if is_granted('ROLE_COACH') %}
+                                                    <a href="{{ path('app_convocation_edit', { id: convocation.id }) }}" class="btn btn-primary">
+                                                        Modifier
+                                                    </a>
+                                                {% endif %}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            {% else %}
+                <div class="empty-state">
+                    <strong>Aucun joueur convoqué pour ce match.</strong>
+                    <p>
+                        {% if is_granted('ROLE_COACH') %}
+                            Tu peux ajouter une convocation ou convoquer toute l’équipe.
+                        {% else %}
+                            Aucune convocation n’est enregistrée pour ce match.
+                        {% endif %}
+                    </p>
+                </div>
+            {% endif %}
+        </section>
+
+        {% if is_granted('ROLE_COACH') %}
+            <section class="dashboard-section">
+                <div class="section-title">
+                    <h2>Suppression</h2>
+                    <p>Suppression du match si aucune contrainte ne le bloque.</p>
+                </div>
+
+                {% if football_match.returnMatches|length > 0 %}
+                    <div class="alert alert-warning">
+                        <p>
+                            Ce match possède un ou plusieurs matchs retour associés.
+                            Il ne peut pas être supprimé directement.
+                        </p>
+
+                        <p>
+                            Supprime d'abord le ou les matchs retour associés avant de supprimer ce match.
+                        </p>
+                    </div>
+                {% else %}
+                    {{ include('football_match/_delete_form.html.twig') }}
+                {% endif %}
+            </section>
+        {% endif %}
+
+    </div>
 {% endblock %}

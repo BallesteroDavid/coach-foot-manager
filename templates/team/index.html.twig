@@ -3,74 +3,122 @@
 {% block title %}Équipes{% endblock %}
 
 {% block body %}
-    <h1>Liste des équipes</h1>
+    <div class="page-container">
 
-    <a href="{{ path('app_team_new') }}">Créer une équipe</a>
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">Équipes</h1>
+                <p class="page-subtitle">
+                    Liste des équipes visibles dans ton club.
+                </p>
+            </div>
 
-    {% if teams is empty %}
-        <p>Aucune équipe enregistrée.</p>
-    {% else %}
-        <table class="table">
-            <thead>
-                <tr>
-                    <th>Nom</th>
-                    <th>Club</th>
-                    <th>Catégorie</th>
-                    <th>Saison</th>
-                    <th>Coachs</th>
-                    <th>Description</th>
-                    <th>Joueurs</th>
-                    <th>Matchs</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
+            <div class="top-actions">
+                {% if can_create_team %}
+                    <a href="{{ path('app_team_new') }}" class="btn btn-primary">
+                        Créer une équipe
+                    </a>
+                {% endif %}
+            </div>
+        </div>
 
-            <tbody>
-                {% for team in teams %}
-                    <tr>
-                        <td>{{ team.name }}</td>
+        {% if teams is empty %}
+            <div class="empty-state">
+                <strong>Aucune équipe enregistrée.</strong>
+                <p>
+                    {% if can_create_team %}
+                        Tu peux créer une première équipe pour commencer.
+                    {% else %}
+                        Aucune équipe n’est encore visible dans ton club.
+                    {% endif %}
+                </p>
+            </div>
+        {% else %}
+            <div class="card">
+                <div class="table-wrapper">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Nom</th>
+                                <th>Club</th>
+                                <th>Catégorie</th>
+                                <th>Saison</th>
+                                <th>Coachs</th>
+                                <th>Joueurs</th>
+                                <th>Matchs</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
 
-                        <td>
-                            {{ team.club ? team.club.name : 'Aucun club' }}
-                        </td>
+                        <tbody>
+                            {% for team in teams %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ team.name }}</strong>
+                                    </td>
 
-                        <td>
-                            {{ team.category ? team.category.name : 'Aucune catégorie' }}
-                        </td>
+                                    <td>
+                                        {{ team.club ? team.club.name : 'Aucun club' }}
+                                    </td>
 
-                        <td>
-                            {{ team.season ? team.season.name : 'Aucune saison' }}
-                        </td>
+                                    <td>
+                                        {% if team.category %}
+                                            <span class="badge">{{ team.category.name }}</span>
+                                        {% else %}
+                                            <span class="badge badge-muted">Aucune</span>
+                                        {% endif %}
+                                    </td>
 
-                        <td>
-                            {% if team.coaches|length > 0 %}
-                                {% for coach in team.coaches %}
-                                    {{ coach.fullName }}{% if not loop.last %}, {% endif %}
-                                {% endfor %}
-                            {% else %}
-                                Aucun coach
-                            {% endif %}
-                        </td>
+                                    <td>
+                                        {% if team.season %}
+                                            {{ team.season.name }}
+                                        {% else %}
+                                            <span class="badge badge-muted">Aucune</span>
+                                        {% endif %}
+                                    </td>
 
-                        <td>
-                            {{ team.description ?: 'Non renseignée' }}
-                        </td>
+                                    <td>
+                                        {% if team.coaches|length > 0 %}
+                                            {% for coach in team.coaches %}
+                                                {{ coach.fullName }}{% if not loop.last %}, {% endif %}
+                                            {% endfor %}
+                                        {% else %}
+                                            <span class="badge badge-muted">Aucun coach</span>
+                                        {% endif %}
+                                    </td>
 
-                        <td>
-                            {{ team.playersCount }}
-                        </td>
+                                    <td>
+                                        <span class="badge badge-success">
+                                            {{ team.playersCount }} joueur{{ team.playersCount > 1 ? 's' : '' }}
+                                        </span>
+                                    </td>
 
-                        <td>
-                            {{ team.footballMatchesCount }}
-                        </td>
+                                    <td>
+                                        <span class="badge">
+                                            {{ team.footballMatchesCount }} match{{ team.footballMatchesCount > 1 ? 's' : '' }}
+                                        </span>
+                                    </td>
 
-                        <td>
-                            <a href="{{ path('app_team_show', { id: team.id }) }}">Voir</a>
-                            <a href="{{ path('app_team_edit', { id: team.id }) }}">Modifier</a>
-                        </td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    {% endif %}
+                                    <td>
+                                        <div class="actions">
+                                            <a href="{{ path('app_team_show', { id: team.id }) }}" class="btn btn-secondary">
+                                                Voir
+                                            </a>
+
+                                            {% if team.id in manageable_team_ids %}
+                                                <a href="{{ path('app_team_edit', { id: team.id }) }}" class="btn btn-primary">
+                                                    Modifier
+                                                </a>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        {% endif %}
+
+    </div>
 {% endblock %}

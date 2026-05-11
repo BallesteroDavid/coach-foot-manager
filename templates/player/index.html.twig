@@ -3,87 +3,147 @@
 {% block title %}Joueurs{% endblock %}
 
 {% block body %}
-    <h1>Liste des joueurs</h1>
+    <div class="page-container">
 
-    <a href="{{ path('app_player_new') }}">Ajouter un joueur</a>
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">Joueurs</h1>
+                <p class="page-subtitle">
+                    Liste des joueurs visibles dans ton club.
+                </p>
+            </div>
 
-    {% set positionLabels = {
-        gardien: 'Gardien',
-        defenseur: 'Défenseur',
-        milieu: 'Milieu',
-        attaquant: 'Attaquant'
-    } %}
+            <div class="top-actions">
+                {% if can_create_player %}
+                    <a href="{{ path('app_player_new') }}" class="btn btn-primary">
+                        Ajouter un joueur
+                    </a>
+                {% endif %}
+            </div>
+        </div>
 
-    {% set statusLabels = {
-        active: 'Actif',
-        injured: 'Blessé',
-        suspended: 'Suspendu',
-        inactive: 'Inactif'
-    } %}
+        {% set positionLabels = {
+            gardien: 'Gardien',
+            defenseur: 'Défenseur',
+            milieu: 'Milieu',
+            attaquant: 'Attaquant'
+        } %}
 
-    {% if players is empty %}
-        <p>Aucun joueur enregistré.</p>
-    {% else %}
-        <table class="table">
-            <thead>
-                <tr>
-                    <th>Nom</th>
-                    <th>Équipe</th>
-                    <th>Poste</th>
-                    <th>N°</th>
-                    <th>Email joueur</th>
-                    <th>Téléphone joueur</th>
-                    <th>Email responsable</th>
-                    <th>Téléphone responsable</th>
-                    <th>Statut</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
+        {% set statusLabels = {
+            active: 'Actif',
+            injured: 'Blessé',
+            suspended: 'Suspendu',
+            inactive: 'Inactif'
+        } %}
 
-            <tbody>
-                {% for player in players %}
-                    <tr>
-                        <td>{{ player.fullName }}</td>
+        {% set statusClasses = {
+            active: 'badge-success',
+            injured: 'badge-warning',
+            suspended: 'badge-danger',
+            inactive: 'badge-muted'
+        } %}
 
-                        <td>
-                            {{ player.team ? player.team.name : 'Aucune équipe' }}
-                        </td>
+        {% if players is empty %}
+            <div class="empty-state">
+                <strong>Aucun joueur enregistré.</strong>
+                <p>
+                    {% if can_create_player %}
+                        Tu peux ajouter un premier joueur pour commencer.
+                    {% else %}
+                        Aucun joueur n’est encore visible dans ton club.
+                    {% endif %}
+                </p>
+            </div>
+        {% else %}
+            <div class="card">
+                <div class="table-wrapper">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Nom</th>
+                                <th>Équipe</th>
+                                <th>Poste</th>
+                                <th>N°</th>
+                                <th>Email joueur</th>
+                                <th>Téléphone joueur</th>
+                                <th>Email responsable</th>
+                                <th>Téléphone responsable</th>
+                                <th>Statut</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
 
-                        <td>
-                            {{ positionLabels[player.position]|default(player.position ?: 'Non renseigné') }}
-                        </td>
+                        <tbody>
+                            {% for player in players %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ player.fullName }}</strong>
+                                    </td>
 
-                        <td>
-                            {{ player.jerseyNumber ?: '-' }}
-                        </td>
+                                    <td>
+                                        {% if player.team %}
+                                            <span class="badge">{{ player.team.name }}</span>
+                                        {% else %}
+                                            <span class="badge badge-muted">Aucune équipe</span>
+                                        {% endif %}
+                                    </td>
 
-                        <td>
-                            {{ player.email ?: '-' }}
-                        </td>
+                                    <td>
+                                        {{ positionLabels[player.position]|default(player.position ?: 'Non renseigné') }}
+                                    </td>
 
-                        <td>
-                            {{ player.phone ?: '-' }}
-                        </td>
+                                    <td>
+                                        {% if player.jerseyNumber %}
+                                            <span class="badge">
+                                                #{{ player.jerseyNumber }}
+                                            </span>
+                                        {% else %}
+                                            <span class="badge badge-muted">-</span>
+                                        {% endif %}
+                                    </td>
 
-                        <td>
-                            {{ player.guardianEmail ?: '-' }}
-                        </td>
+                                    <td>
+                                        {{ player.email ?: '-' }}
+                                    </td>
 
-                        <td>
-                            {{ player.guardianPhone ?: '-' }}
-                        </td>
+                                    <td>
+                                        {{ player.phone ?: '-' }}
+                                    </td>
 
-                        <td>
-                            {{ statusLabels[player.status]|default(player.status) }}
-                        </td>
+                                    <td>
+                                        {{ player.guardianEmail ?: '-' }}
+                                    </td>
 
-                        <td>
-                            <a href="{{ path('app_player_show', { id: player.id }) }}">Voir</a>
-                            <a href="{{ path('app_player_edit', { id: player.id }) }}">Modifier</a>
-                        </td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    {% endif %}
+                                    <td>
+                                        {{ player.guardianPhone ?: '-' }}
+                                    </td>
+
+                                    <td>
+                                        <span class="badge {{ statusClasses[player.status]|default('badge-muted') }}">
+                                            {{ statusLabels[player.status]|default(player.status ?: 'Non renseigné') }}
+                                        </span>
+                                    </td>
+
+                                    <td>
+                                        <div class="actions">
+                                            <a href="{{ path('app_player_show', { id: player.id }) }}" class="btn btn-secondary">
+                                                Voir
+                                            </a>
+
+                                            {% if player.id in manageable_player_ids %}
+                                                <a href="{{ path('app_player_edit', { id: player.id }) }}" class="btn btn-primary">
+                                                    Modifier
+                                                </a>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        {% endif %}
+
+    </div>
 {% endblock %}

@@ -23,7 +23,7 @@ class FootballMatchRepository extends ServiceEntityRepository
      * ROLE_SUPER_ADMIN :
      * - voit tous les matchs
      *
-     * ROLE_ADMIN :
+     * ROLE_ADMIN / ROLE_ADMIN_CLUB :
      * - voit les matchs des équipes de son club
      *
      * ROLE_COACH :
@@ -49,7 +49,10 @@ class FootballMatchRepository extends ServiceEntityRepository
                 ->getResult();
         }
 
-        if (in_array('ROLE_ADMIN', $roles, true)) {
+        if (
+            in_array('ROLE_ADMIN', $roles, true)
+            || in_array('ROLE_ADMIN_CLUB', $roles, true)
+        ) {
             $club = $user->getClub();
 
             if ($club === null) {

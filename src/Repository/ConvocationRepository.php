@@ -23,7 +23,7 @@ class ConvocationRepository extends ServiceEntityRepository
      * ROLE_SUPER_ADMIN :
      * - voit toutes les convocations
      *
-     * ROLE_ADMIN :
+     * ROLE_ADMIN / ROLE_ADMIN_CLUB :
      * - voit les convocations des matchs des équipes de son club
      *
      * ROLE_COACH :
@@ -52,7 +52,10 @@ class ConvocationRepository extends ServiceEntityRepository
                 ->getResult();
         }
 
-        if (in_array('ROLE_ADMIN', $roles, true)) {
+        if (
+            in_array('ROLE_ADMIN', $roles, true)
+            || in_array('ROLE_ADMIN_CLUB', $roles, true)
+        ) {
             $club = $user->getClub();
 
             if ($club === null) {

@@ -3,61 +3,114 @@
 {% block title %}Convocations{% endblock %}
 
 {% block body %}
-    <h1>Liste des convocations</h1>
+    <div class="page-container">
 
-    <a href="{{ path('app_convocation_new') }}">Créer une convocation</a>
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">Convocations</h1>
+                <p class="page-subtitle">
+                    Liste des convocations auxquelles tu as accès.
+                </p>
+            </div>
 
-    {% if convocations is empty %}
-        <p>Aucune convocation enregistrée.</p>
-    {% else %}
-        <table class="table">
-            <thead>
-                <tr>
-                    <th>Match</th>
-                    <th>Joueur</th>
-                    <th>Statut</th>
-                    <th>Créée par</th>
-                    <th>Créée le</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
+            <div class="top-actions">
+                {% if is_granted('ROLE_COACH') %}
+                    <a href="{{ path('app_convocation_new') }}" class="btn btn-primary">
+                        Créer une convocation
+                    </a>
+                {% endif %}
+            </div>
+        </div>
 
-            <tbody>
-                {% for convocation in convocations %}
-                    <tr>
-                        <td>
-                            {% if convocation.footballMatch %}
-                                {{ convocation.footballMatch.matchDate ? convocation.footballMatch.matchDate|date('d/m/Y') : '-' }}
-                                —
-                                {{ convocation.footballMatch.team ? convocation.footballMatch.team.name : 'Équipe inconnue' }}
-                                vs
-                                {{ convocation.footballMatch.opponent }}
-                            {% else %}
-                                Match inconnu
-                            {% endif %}
-                        </td>
+        {% if convocations is empty %}
+            <div class="empty-state">
+                <strong>Aucune convocation enregistrée.</strong>
+                <p>
+                    {% if is_granted('ROLE_COACH') %}
+                        Tu peux créer une première convocation depuis cette page ou depuis la fiche d’un match.
+                    {% else %}
+                        Aucune convocation n’est disponible pour le moment.
+                    {% endif %}
+                </p>
+            </div>
+        {% else %}
+            <div class="card">
+                <div class="table-wrapper">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Match</th>
+                                <th>Joueur</th>
+                                <th>Statut</th>
+                                <th>Créée par</th>
+                                <th>Créée le</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
 
-                        <td>
-                            {{ convocation.player ? convocation.player.fullName : 'Joueur inconnu' }}
-                        </td>
+                        <tbody>
+                            {% for convocation in convocations %}
+                                <tr>
+                                    <td>
+                                        {% if convocation.footballMatch %}
+                                            <strong>
+                                                {{ convocation.footballMatch.matchDate ? convocation.footballMatch.matchDate|date('d/m/Y') : '-' }}
+                                            </strong>
+                                            <br>
+                                            <span>
+                                                {{ convocation.footballMatch.team ? convocation.footballMatch.team.name : 'Équipe inconnue' }}
+                                                vs
+                                                {{ convocation.footballMatch.opponent ?: 'Adversaire non renseigné' }}
+                                            </span>
+                                        {% else %}
+                                            <span class="badge badge-muted">Match inconnu</span>
+                                        {% endif %}
+                                    </td>
 
-                        <td>{{ convocation.statusLabel }}</td>
+                                    <td>
+                                        {% if convocation.player %}
+                                            <a href="{{ path('app_player_show', { id: convocation.player.id }) }}">
+                                                <strong>{{ convocation.player.fullName }}</strong>
+                                            </a>
+                                        {% else %}
+                                            <span class="badge badge-muted">Joueur inconnu</span>
+                                        {% endif %}
+                                    </td>
 
-                        <td>
-                            {{ convocation.createdBy ? convocation.createdBy.fullName : 'Non renseigné' }}
-                        </td>
+                                    <td>
+                                        <span class="badge">
+                                            {{ convocation.statusLabel }}
+                                        </span>
+                                    </td>
 
-                        <td>
-                            {{ convocation.createdAt ? convocation.createdAt|date('d/m/Y H:i') : '-' }}
-                        </td>
+                                    <td>
+                                        {{ convocation.createdBy ? convocation.createdBy.fullName : 'Non renseigné' }}
+                                    </td>
 
-                        <td>
-                            <a href="{{ path('app_convocation_show', { id: convocation.id }) }}">Voir</a>
-                            <a href="{{ path('app_convocation_edit', { id: convocation.id }) }}">Modifier</a>
-                        </td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    {% endif %}
+                                    <td>
+                                        {{ convocation.createdAt ? convocation.createdAt|date('d/m/Y H:i') : '-' }}
+                                    </td>
+
+                                    <td>
+                                        <div class="actions">
+                                            <a href="{{ path('app_convocation_show', { id: convocation.id }) }}" class="btn btn-secondary">
+                                                Voir
+                                            </a>
+
+                                            {% if is_granted('ROLE_COACH') %}
+                                                <a href="{{ path('app_convocation_edit', { id: convocation.id }) }}" class="btn btn-primary">
+                                                    Modifier
+                                                </a>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        {% endif %}
+
+    </div>
 {% endblock %}

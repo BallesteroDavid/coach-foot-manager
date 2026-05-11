@@ -18,38 +18,34 @@ class PlayerRepository extends ServiceEntityRepository
     }
 
     /**
-     * Retourne les joueurs visibles selon le rôle de l'utilisateur connecté.
+     * Retourne les joueurs visibles selon l'utilisateur connecté.
      *
      * ROLE_SUPER_ADMIN :
      * - voit tous les joueurs
      *
-     * ROLE_ADMIN :
-     * - voit les joueurs des équipes de son club
+     * ROLE_ADMIN / ROLE_ADMIN_CLUB :
+     * - voit les joueurs de son club
      *
      * ROLE_COACH :
-     * - voit les joueurs des équipes qu'il encadre
+     * - voit tous les joueurs de son club en lecture seule
      *
      * @return Player[]
      */
     public function findVisibleForUser(AppUser $user): array
     {
-        $queryBuilder = $this->createQueryBuilder('p')
-            ->leftJoin('p.team', 't')
-            ->addSelect('t')
-            ->leftJoin('t.club', 'c')
-            ->addSelect('c')
-            ->orderBy('p.lastName', 'ASC')
-            ->addOrderBy('p.firstName', 'ASC');
+        $queryBuilder = $this->createBaseQueryBuilder();
 
-        $roles = $user->getRoles();
-
-        if (in_array('ROLE_SUPER_ADMIN', $roles, true)) {
+        if ($this->hasRole($user, 'ROLE_SUPER_ADMIN')) {
             return $queryBuilder
                 ->getQuery()
                 ->getResult();
         }
 
-        if (in_array('ROLE_ADMIN', $roles, true)) {
+        if (
+            $this->hasRole($user, 'ROLE_ADMIN')
+            || $this->hasRole($user, 'ROLE_ADMIN_CLUB')
+            || $this->hasRole($user, 'ROLE_COACH')
+        ) {
             $club = $user->getClub();
 
             if ($club === null) {
@@ -63,7 +59,51 @@ class PlayerRepository extends ServiceEntityRepository
                 ->getResult();
         }
 
-        if (in_array('ROLE_COACH', $roles, true)) {
+        return [];
+    }
+
+    /**
+     * Retourne les joueurs que l'utilisateur peut gérer.
+     *
+     * ROLE_SUPER_ADMIN :
+     * - peut gérer tous les joueurs
+     *
+     * ROLE_ADMIN / ROLE_ADMIN_CLUB :
+     * - peut gérer les joueurs de son club
+     *
+     * ROLE_COACH :
+     * - peut gérer uniquement les joueurs des équipes qu'il encadre
+     *
+     * @return Player[]
+     */
+    public function findManageableForUser(AppUser $user): array
+    {
+        $queryBuilder = $this->createBaseQueryBuilder();
+
+        if ($this->hasRole($user, 'ROLE_SUPER_ADMIN')) {
+            return $queryBuilder
+                ->getQuery()
+                ->getResult();
+        }
+
+        if (
+            $this->hasRole($user, 'ROLE_ADMIN')
+            || $this->hasRole($user, 'ROLE_ADMIN_CLUB')
+        ) {
+            $club = $user->getClub();
+
+            if ($club === null) {
+                return [];
+            }
+
+            return $queryBuilder
+                ->andWhere('t.club = :club')
+                ->setParameter('club', $club)
+                ->getQuery()
+                ->getResult();
+        }
+
+        if ($this->hasRole($user, 'ROLE_COACH')) {
             $coachedTeams = $user->getCoachedTeams()->toArray();
 
             if (count($coachedTeams) === 0) {
@@ -78,5 +118,25 @@ class PlayerRepository extends ServiceEntityRepository
         }
 
         return [];
+    }
+
+    private function createBaseQueryBuilder()
+    {
+        return $this->createQueryBuilder('p')
+            ->leftJoin('p.team', 't')
+            ->addSelect('t')
+            ->leftJoin('t.club', 'c')
+            ->addSelect('c')
+            ->leftJoin('t.category', 'category')
+            ->addSelect('category')
+            ->leftJoin('t.season', 'season')
+            ->addSelect('season')
+            ->orderBy('p.lastName', 'ASC')
+            ->addOrderBy('p.firstName', 'ASC');
+    }
+
+    private function hasRole(AppUser $user, string $role): bool
+    {
+        return in_array($role, $user->getRoles(), true);
     }
 }

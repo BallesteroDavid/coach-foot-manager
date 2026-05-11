@@ -1,92 +1,184 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Détail de l'utilisateur{% endblock %}
+{% block title %}{{ app_user.fullName ?: app_user.email }}{% endblock %}
 
 {% block body %}
-    <h1>Détail de l'utilisateur</h1>
+    <div class="page-container">
 
-    {% set roleLabels = {
-        ROLE_USER: 'Utilisateur',
-        ROLE_COACH: 'Coach',
-        ROLE_ADMIN: 'Admin',
-        ROLE_SUPER_ADMIN: 'Super admin'
-    } %}
+        {% set roleLabels = {
+            ROLE_USER: 'Utilisateur',
+            ROLE_COACH: 'Coach',
+            ROLE_ADMIN: 'Admin',
+            ROLE_SUPER_ADMIN: 'Super admin'
+        } %}
 
-    <table class="table">
-        <tbody>
-            <tr>
-                <th>Prénom</th>
-                <td>{{ app_user.firstname }}</td>
-            </tr>
+        {% set roleClasses = {
+            ROLE_USER: 'badge-muted',
+            ROLE_COACH: 'badge-success',
+            ROLE_ADMIN: 'badge',
+            ROLE_SUPER_ADMIN: 'badge-warning'
+        } %}
 
-            <tr>
-                <th>Nom</th>
-                <td>{{ app_user.lastname }}</td>
-            </tr>
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">
+                    {{ app_user.fullName ?: app_user.email }}
+                </h1>
+                <p class="page-subtitle">
+                    Détail du compte utilisateur.
+                </p>
+            </div>
 
-            <tr>
-                <th>Nom complet</th>
-                <td>{{ app_user.fullName }}</td>
-            </tr>
+            <div class="top-actions">
+                <a href="{{ path('app_user_index') }}" class="btn btn-secondary">
+                    Retour à la liste
+                </a>
 
-            <tr>
-                <th>Email</th>
-                <td>{{ app_user.email }}</td>
-            </tr>
-
-            <tr>
-                <th>Rôles</th>
-                <td>
-                    {% for role in app_user.roles %}
-                        {{ roleLabels[role]|default(role) }}{% if not loop.last %}, {% endif %}
-                    {% endfor %}
-                </td>
-            </tr>
-
-            <tr>
-                <th>Club</th>
-                <td>{{ app_user.club ? app_user.club.name : 'Aucun club' }}</td>
-            </tr>
-
-            <tr>
-                <th>Équipes encadrées</th>
-                <td>
-                    {% if app_user.coachedTeams|length > 0 %}
-                        <ul>
-                            {% for team in app_user.coachedTeams %}
-                                <li>
-                                    <a href="{{ path('app_team_show', { id: team.id }) }}">
-                                        {{ team.name }}
-                                    </a>
-
-                                    {% if team.category %}
-                                        — {{ team.category.name }}
-                                    {% endif %}
-
-                                    {% if team.season %}
-                                        — {{ team.season.name }}
-                                    {% endif %}
-                                </li>
-                            {% endfor %}
-                        </ul>
-                    {% else %}
-                        Aucune équipe encadrée
-                    {% endif %}
-                </td>
-            </tr>
-        </tbody>
-    </table>
-
-    <a href="{{ path('app_user_index') }}">Retour à la liste</a>
-    <a href="{{ path('app_user_edit', { id: app_user.id }) }}">Modifier</a>
-
-    {% if app.user and app.user.id == app_user.id %}
-        <div class="alert alert-warning">
-            <p>
-                Vous ne pouvez pas supprimer votre propre compte.
-            </p>
+                {% if is_granted('ROLE_ADMIN') %}
+                    <a href="{{ path('app_user_edit', { id: app_user.id }) }}" class="btn btn-primary">
+                        Modifier
+                    </a>
+                {% endif %}
+            </div>
         </div>
-    {% else %}
-        {{ include('app_user/_delete_form.html.twig') }}
-    {% endif %}
+
+        <div class="card">
+            <h2 class="card-title">Informations utilisateur</h2>
+
+            <div class="table-wrapper">
+                <table class="table">
+                    <tbody>
+                        <tr>
+                            <th>Prénom</th>
+                            <td>{{ app_user.firstname ?: 'Non renseigné' }}</td>
+                        </tr>
+
+                        <tr>
+                            <th>Nom</th>
+                            <td>{{ app_user.lastname ?: 'Non renseigné' }}</td>
+                        </tr>
+
+                        <tr>
+                            <th>Nom complet</th>
+                            <td>
+                                <strong>{{ app_user.fullName ?: 'Non renseigné' }}</strong>
+                            </td>
+                        </tr>
+
+                        <tr>
+                            <th>Email</th>
+                            <td>{{ app_user.email }}</td>
+                        </tr>
+
+                        <tr>
+                            <th>Rôles</th>
+                            <td>
+                                <div class="actions">
+                                    {% for role in app_user.roles %}
+                                        <span class="badge {{ roleClasses[role]|default('badge-muted') }}">
+                                            {{ roleLabels[role]|default(role) }}
+                                        </span>
+                                    {% endfor %}
+                                </div>
+                            </td>
+                        </tr>
+
+                        <tr>
+                            <th>Club</th>
+                            <td>
+                                {% if app_user.club %}
+                                    {{ app_user.club.name }}
+                                {% else %}
+                                    <span class="badge badge-muted">Aucun club</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <section class="dashboard-section">
+            <div class="section-title">
+                <h2>Équipes encadrées</h2>
+                <p>Les équipes rattachées à cet utilisateur en tant que coach.</p>
+            </div>
+
+            {% if app_user.coachedTeams|length > 0 %}
+                <div class="card">
+                    <div class="table-wrapper">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Équipe</th>
+                                    <th>Catégorie</th>
+                                    <th>Saison</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+                                {% for team in app_user.coachedTeams %}
+                                    <tr>
+                                        <td>
+                                            <strong>{{ team.name }}</strong>
+                                        </td>
+
+                                        <td>
+                                            {% if team.category %}
+                                                <span class="badge">{{ team.category.name }}</span>
+                                            {% else %}
+                                                <span class="badge badge-muted">Aucune catégorie</span>
+                                            {% endif %}
+                                        </td>
+
+                                        <td>
+                                            {% if team.season %}
+                                                {{ team.season.name }}
+                                            {% else %}
+                                                <span class="badge badge-muted">Aucune saison</span>
+                                            {% endif %}
+                                        </td>
+
+                                        <td>
+                                            <a href="{{ path('app_team_show', { id: team.id }) }}" class="btn btn-secondary">
+                                                Voir
+                                            </a>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            {% else %}
+                <div class="empty-state">
+                    <strong>Aucune équipe encadrée.</strong>
+                    <p>
+                        Cet utilisateur n’est rattaché à aucune équipe en tant que coach.
+                    </p>
+                </div>
+            {% endif %}
+        </section>
+
+        {% if is_granted('ROLE_ADMIN') %}
+            <section class="dashboard-section">
+                <div class="section-title">
+                    <h2>Suppression</h2>
+                    <p>Supprimer ce compte utilisateur si nécessaire.</p>
+                </div>
+
+                {% if app.user and app.user.id == app_user.id %}
+                    <div class="alert alert-warning">
+                        <p>
+                            Vous ne pouvez pas supprimer votre propre compte.
+                        </p>
+                    </div>
+                {% else %}
+                    {{ include('app_user/_delete_form.html.twig') }}
+                {% endif %}
+            </section>
+        {% endif %}
+
+    </div>
 {% endblock %}

@@ -1,92 +1,170 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Fiche joueur{% endblock %}
+{% block title %}{{ player.fullName }}{% endblock %}
 
 {% block body %}
-    <h1>Fiche joueur</h1>
+    <div class="page-container">
 
-    {% set positionLabels = {
-        gardien: 'Gardien',
-        defenseur: 'Défenseur',
-        milieu: 'Milieu',
-        attaquant: 'Attaquant'
-    } %}
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">{{ player.fullName }}</h1>
+                <p class="page-subtitle">
+                    Fiche détaillée du joueur.
+                </p>
+            </div>
 
-    {% set statusLabels = {
-        active: 'Actif',
-        injured: 'Blessé',
-        suspended: 'Suspendu',
-        inactive: 'Inactif'
-    } %}
+            <div class="top-actions">
+                <a href="{{ path('app_player_index') }}" class="btn btn-secondary">
+                    Retour à la liste
+                </a>
 
-    <table class="table">
-        <tbody>
-            <tr>
-                <th>Nom complet</th>
-                <td>{{ player.fullName }}</td>
-            </tr>
+                {% if can_manage %}
+                    <a href="{{ path('app_player_edit', { id: player.id }) }}" class="btn btn-primary">
+                        Modifier
+                    </a>
+                {% endif %}
+            </div>
+        </div>
 
-            <tr>
-                <th>Prénom</th>
-                <td>{{ player.firstName }}</td>
-            </tr>
+        {% set positionLabels = {
+            gardien: 'Gardien',
+            defenseur: 'Défenseur',
+            milieu: 'Milieu',
+            attaquant: 'Attaquant'
+        } %}
 
-            <tr>
-                <th>Nom</th>
-                <td>{{ player.lastName }}</td>
-            </tr>
+        {% set statusLabels = {
+            active: 'Actif',
+            injured: 'Blessé',
+            suspended: 'Suspendu',
+            inactive: 'Inactif'
+        } %}
 
-            <tr>
-                <th>Date de naissance</th>
-                <td>
-                    {{ player.birthDate ? player.birthDate|date('d/m/Y') : 'Non renseignée' }}
-                </td>
-            </tr>
+        {% set statusClasses = {
+            active: 'badge-success',
+            injured: 'badge-warning',
+            suspended: 'badge-danger',
+            inactive: 'badge-muted'
+        } %}
 
-            <tr>
-                <th>Email du joueur</th>
-                <td>{{ player.email ?: 'Non renseigné' }}</td>
-            </tr>
+        <div class="card">
+            <h2 class="card-title">Informations joueur</h2>
 
-            <tr>
-                <th>Téléphone du joueur</th>
-                <td>{{ player.phone ?: 'Non renseigné' }}</td>
-            </tr>
+            <div class="table-wrapper">
+                <table class="table">
+                    <tbody>
+                        <tr>
+                            <th>Nom complet</th>
+                            <td>
+                                <strong>{{ player.fullName }}</strong>
+                            </td>
+                        </tr>
 
-            <tr>
-                <th>Email du parent / responsable légal</th>
-                <td>{{ player.guardianEmail ?: 'Non renseigné' }}</td>
-            </tr>
+                        <tr>
+                            <th>Prénom</th>
+                            <td>{{ player.firstName }}</td>
+                        </tr>
 
-            <tr>
-                <th>Téléphone du parent / responsable légal</th>
-                <td>{{ player.guardianPhone ?: 'Non renseigné' }}</td>
-            </tr>
+                        <tr>
+                            <th>Nom</th>
+                            <td>{{ player.lastName }}</td>
+                        </tr>
 
-            <tr>
-                <th>Poste</th>
-                <td>{{ positionLabels[player.position]|default(player.position ?: 'Non renseigné') }}</td>
-            </tr>
+                        <tr>
+                            <th>Date de naissance</th>
+                            <td>
+                                {{ player.birthDate ? player.birthDate|date('d/m/Y') : 'Non renseignée' }}
+                            </td>
+                        </tr>
 
-            <tr>
-                <th>Numéro de maillot</th>
-                <td>{{ player.jerseyNumber ?: 'Non renseigné' }}</td>
-            </tr>
+                        <tr>
+                            <th>Poste</th>
+                            <td>
+                                {{ positionLabels[player.position]|default(player.position ?: 'Non renseigné') }}
+                            </td>
+                        </tr>
 
-            <tr>
-                <th>Statut</th>
-                <td>{{ statusLabels[player.status]|default(player.status) }}</td>
-            </tr>
+                        <tr>
+                            <th>Numéro de maillot</th>
+                            <td>
+                                {% if player.jerseyNumber %}
+                                    <span class="badge">
+                                        #{{ player.jerseyNumber }}
+                                    </span>
+                                {% else %}
+                                    <span class="badge badge-muted">
+                                        Non renseigné
+                                    </span>
+                                {% endif %}
+                            </td>
+                        </tr>
 
-            <tr>
-                <th>Équipe</th>
-                <td>{{ player.team ? player.team.name : 'Aucune équipe' }}</td>
-            </tr>
-        </tbody>
-    </table>
+                        <tr>
+                            <th>Statut</th>
+                            <td>
+                                <span class="badge {{ statusClasses[player.status]|default('badge-muted') }}">
+                                    {{ statusLabels[player.status]|default(player.status ?: 'Non renseigné') }}
+                                </span>
+                            </td>
+                        </tr>
 
-    <a href="{{ path('app_player_index') }}">Retour à la liste</a>
-    <a href="{{ path('app_player_edit', { id: player.id }) }}">Modifier</a>
+                        <tr>
+                            <th>Équipe</th>
+                            <td>
+                                {% if player.team %}
+                                    <span class="badge">{{ player.team.name }}</span>
+                                {% else %}
+                                    <span class="badge badge-muted">Aucune équipe</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
 
-    {{ include('player/_delete_form.html.twig') }}
+        <div class="card">
+            <h2 class="card-title">Coordonnées</h2>
+
+            <div class="table-wrapper">
+                <table class="table">
+                    <tbody>
+                        <tr>
+                            <th>Email du joueur</th>
+                            <td>{{ player.email ?: 'Non renseigné' }}</td>
+                        </tr>
+
+                        <tr>
+                            <th>Téléphone du joueur</th>
+                            <td>{{ player.phone ?: 'Non renseigné' }}</td>
+                        </tr>
+
+                        <tr>
+                            <th>Email du parent / responsable légal</th>
+                            <td>{{ player.guardianEmail ?: 'Non renseigné' }}</td>
+                        </tr>
+
+                        <tr>
+                            <th>Téléphone du parent / responsable légal</th>
+                            <td>{{ player.guardianPhone ?: 'Non renseigné' }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        {% if can_manage %}
+            <section class="dashboard-section">
+                <div class="section-title">
+                    <h2>Suppression</h2>
+                    <p>
+                        Cette action est disponible uniquement pour les joueurs que tu peux gérer.
+                    </p>
+                </div>
+
+                {{ include('player/_delete_form.html.twig') }}
+            </section>
+        {% endif %}
+
+    </div>
 {% endblock %}

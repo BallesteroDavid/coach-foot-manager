@@ -4,8 +4,10 @@ namespace App\Controller;
 
 use App\Entity\AppUser;
 use App\Entity\Player;
+use App\Entity\Team;
 use App\Form\PlayerType;
 use App\Repository\PlayerRepository;
+use App\Repository\TeamRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -14,32 +16,61 @@ use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[Route('/player')]
-#[IsGranted('ROLE_COACH')]
+#[IsGranted('IS_AUTHENTICATED_FULLY')]
 final class PlayerController extends AbstractController
 {
     #[Route(name: 'app_player_index', methods: ['GET'])]
-    public function index(PlayerRepository $playerRepository): Response
-    {
-        $currentUser = $this->getUser();
+    public function index(
+        PlayerRepository $playerRepository,
+        TeamRepository $teamRepository
+    ): Response {
+        $currentUser = $this->getCurrentAppUser();
 
-        if (!$currentUser instanceof AppUser) {
-            throw $this->createAccessDeniedException();
-        }
+        $players = $playerRepository->findVisibleForUser($currentUser);
+        $manageablePlayers = $playerRepository->findManageableForUser($currentUser);
+        $manageableTeams = $teamRepository->findManageableForUser($currentUser);
+
+        $manageablePlayerIds = array_map(
+            static fn (Player $player): int => $player->getId(),
+            $manageablePlayers
+        );
 
         return $this->render('player/index.html.twig', [
-            'players' => $playerRepository->findVisibleForUser($currentUser),
+            'players' => $players,
+            'manageable_player_ids' => $manageablePlayerIds,
+            'can_create_player' => count($manageableTeams) > 0,
         ]);
     }
 
     #[Route('/new', name: 'app_player_new', methods: ['GET', 'POST'])]
-    #[IsGranted('ROLE_ADMIN')]
-    public function new(Request $request, EntityManagerInterface $entityManager): Response
-    {
+    public function new(
+        Request $request,
+        EntityManagerInterface $entityManager,
+        TeamRepository $teamRepository
+    ): Response {
+        $currentUser = $this->getCurrentAppUser();
+
+        $manageableTeams = $teamRepository->findManageableForUser($currentUser);
+
+        if (count($manageableTeams) === 0) {
+            throw $this->createAccessDeniedException('Vous ne pouvez créer un joueur dans aucune équipe.');
+        }
+
         $player = new Player();
-        $form = $this->createForm(PlayerType::class, $player);
+
+        $form = $this->createForm(PlayerType::class, $player, [
+            'available_teams' => $manageableTeams,
+        ]);
+
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
+            $team = $player->getTeam();
+
+            if ($team === null || !$this->canManageTeam($team)) {
+                throw $this->createAccessDeniedException('Vous ne pouvez pas créer un joueur dans cette équipe.');
+            }
+
             $entityManager->persist($player);
             $entityManager->flush();
 
@@ -57,27 +88,48 @@ final class PlayerController extends AbstractController
     #[Route('/{id}', name: 'app_player_show', methods: ['GET'])]
     public function show(Player $player): Response
     {
-        if (!$this->canAccessPlayer($player)) {
-            throw $this->createAccessDeniedException("Vous ne pouvez pas accéder à ce joueur.");
+        if (!$this->canViewPlayer($player)) {
+            throw $this->createAccessDeniedException('Vous ne pouvez pas accéder à ce joueur.');
         }
 
         return $this->render('player/show.html.twig', [
             'player' => $player,
+            'can_manage' => $this->canManagePlayer($player),
         ]);
     }
 
     #[Route('/{id}/edit', name: 'app_player_edit', methods: ['GET', 'POST'])]
-    #[IsGranted('ROLE_ADMIN')]
-    public function edit(Request $request, Player $player, EntityManagerInterface $entityManager): Response
-    {
-        if (!$this->canAccessPlayer($player)) {
-            throw $this->createAccessDeniedException("Vous ne pouvez pas modifier ce joueur.");
+    public function edit(
+        Request $request,
+        Player $player,
+        EntityManagerInterface $entityManager,
+        TeamRepository $teamRepository
+    ): Response {
+        if (!$this->canManagePlayer($player)) {
+            throw $this->createAccessDeniedException('Vous ne pouvez pas modifier ce joueur.');
         }
 
-        $form = $this->createForm(PlayerType::class, $player);
+        $currentUser = $this->getCurrentAppUser();
+
+        $manageableTeams = $teamRepository->findManageableForUser($currentUser);
+
+        if (count($manageableTeams) === 0) {
+            throw $this->createAccessDeniedException('Vous ne pouvez modifier aucun joueur.');
+        }
+
+        $form = $this->createForm(PlayerType::class, $player, [
+            'available_teams' => $manageableTeams,
+        ]);
+
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
+            $team = $player->getTeam();
+
+            if ($team === null || !$this->canManageTeam($team)) {
+                throw $this->createAccessDeniedException('Vous ne pouvez pas affecter ce joueur à cette équipe.');
+            }
+
             $player->setUpdatedAt(new \DateTimeImmutable());
 
             $entityManager->flush();
@@ -94,11 +146,13 @@ final class PlayerController extends AbstractController
     }
 
     #[Route('/{id}', name: 'app_player_delete', methods: ['POST'])]
-    #[IsGranted('ROLE_ADMIN')]
-    public function delete(Request $request, Player $player, EntityManagerInterface $entityManager): Response
-    {
-        if (!$this->canAccessPlayer($player)) {
-            throw $this->createAccessDeniedException("Vous ne pouvez pas supprimer ce joueur.");
+    public function delete(
+        Request $request,
+        Player $player,
+        EntityManagerInterface $entityManager
+    ): Response {
+        if (!$this->canManagePlayer($player)) {
+            throw $this->createAccessDeniedException('Vous ne pouvez pas supprimer ce joueur.');
         }
 
         if ($this->isCsrfTokenValid('delete'.$player->getId(), $request->getPayload()->getString('_token'))) {
@@ -111,7 +165,7 @@ final class PlayerController extends AbstractController
         return $this->redirectToRoute('app_player_index', [], Response::HTTP_SEE_OTHER);
     }
 
-    private function canAccessPlayer(Player $player): bool
+    private function canViewPlayer(Player $player): bool
     {
         $currentUser = $this->getUser();
 
@@ -129,7 +183,48 @@ final class PlayerController extends AbstractController
             return false;
         }
 
-        if ($this->isGranted('ROLE_ADMIN')) {
+        $userClub = $currentUser->getClub();
+        $teamClub = $team->getClub();
+
+        if ($userClub === null || $teamClub === null) {
+            return false;
+        }
+
+        if (
+            $this->isGranted('ROLE_ADMIN')
+            || $this->isGranted('ROLE_ADMIN_CLUB')
+            || $this->isGranted('ROLE_COACH')
+        ) {
+            return $userClub->getId() === $teamClub->getId();
+        }
+
+        return false;
+    }
+
+    private function canManagePlayer(Player $player): bool
+    {
+        $team = $player->getTeam();
+
+        if ($team === null) {
+            return false;
+        }
+
+        return $this->canManageTeam($team);
+    }
+
+    private function canManageTeam(Team $team): bool
+    {
+        $currentUser = $this->getUser();
+
+        if (!$currentUser instanceof AppUser) {
+            return false;
+        }
+
+        if ($this->isGranted('ROLE_SUPER_ADMIN')) {
+            return true;
+        }
+
+        if ($this->isGranted('ROLE_ADMIN') || $this->isGranted('ROLE_ADMIN_CLUB')) {
             $userClub = $currentUser->getClub();
             $teamClub = $team->getClub();
 
@@ -147,5 +242,16 @@ final class PlayerController extends AbstractController
         }
 
         return false;
+    }
+
+    private function getCurrentAppUser(): AppUser
+    {
+        $currentUser = $this->getUser();
+
+        if (!$currentUser instanceof AppUser) {
+            throw $this->createAccessDeniedException();
+        }
+
+        return $currentUser;
     }
 }

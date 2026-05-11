@@ -3,54 +3,117 @@
 {% block title %}Clubs{% endblock %}
 
 {% block body %}
-    <h1>Liste des clubs</h1>
+    <div class="page-container">
 
-    <a href="{{ path('app_club_new') }}">Créer un club</a>
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">Clubs</h1>
+                <p class="page-subtitle">
+                    Liste des clubs auxquels tu as accès.
+                </p>
+            </div>
 
-    {% if clubs is empty %}
-        <p>Aucun club enregistré.</p>
-    {% else %}
-        <table class="table">
-            <thead>
-                <tr>
-                    <th>Nom</th>
-                    <th>Ville</th>
-                    <th>Email</th>
-                    <th>Téléphone</th>
-                    <th>Utilisateurs</th>
-                    <th>Équipes</th>
-                    <th>Catégories</th>
-                    <th>Saisons</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
+            <div class="top-actions">
+                {% if is_granted('ROLE_SUPER_ADMIN') %}
+                    <a href="{{ path('app_club_new') }}" class="btn btn-primary">
+                        Créer un club
+                    </a>
+                {% endif %}
+            </div>
+        </div>
 
-            <tbody>
-                {% for club in clubs %}
-                    <tr>
-                        <td>{{ club.name }}</td>
+        {% if clubs is empty %}
+            <div class="empty-state">
+                <strong>Aucun club enregistré.</strong>
+                <p>
+                    {% if is_granted('ROLE_SUPER_ADMIN') %}
+                        Tu peux créer un premier club pour commencer.
+                    {% else %}
+                        Aucun club n’est disponible pour ton compte.
+                    {% endif %}
+                </p>
+            </div>
+        {% else %}
+            <div class="card">
+                <div class="table-wrapper">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Nom</th>
+                                <th>Ville</th>
+                                <th>Email</th>
+                                <th>Téléphone</th>
+                                <th>Utilisateurs</th>
+                                <th>Équipes</th>
+                                <th>Catégories</th>
+                                <th>Saisons</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
 
-                        <td>{{ club.city ?: 'Non renseignée' }}</td>
+                        <tbody>
+                            {% for club in clubs %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ club.name }}</strong>
+                                    </td>
 
-                        <td>{{ club.email ?: '-' }}</td>
+                                    <td>
+                                        {{ club.city ?: 'Non renseignée' }}
+                                    </td>
 
-                        <td>{{ club.phone ?: '-' }}</td>
+                                    <td>
+                                        {{ club.email ?: '-' }}
+                                    </td>
 
-                        <td>{{ club.appUsersCount }}</td>
+                                    <td>
+                                        {{ club.phone ?: '-' }}
+                                    </td>
 
-                        <td>{{ club.teamsCount }}</td>
+                                    <td>
+                                        <span class="badge">
+                                            {{ club.appUsersCount }} utilisateur{{ club.appUsersCount > 1 ? 's' : '' }}
+                                        </span>
+                                    </td>
 
-                        <td>{{ club.categoriesCount }}</td>
+                                    <td>
+                                        <span class="badge badge-success">
+                                            {{ club.teamsCount }} équipe{{ club.teamsCount > 1 ? 's' : '' }}
+                                        </span>
+                                    </td>
 
-                        <td>{{ club.seasonsCount }}</td>
+                                    <td>
+                                        <span class="badge">
+                                            {{ club.categoriesCount }} catégorie{{ club.categoriesCount > 1 ? 's' : '' }}
+                                        </span>
+                                    </td>
 
-                        <td>
-                            <a href="{{ path('app_club_show', { id: club.id }) }}">Voir</a>
-                            <a href="{{ path('app_club_edit', { id: club.id }) }}">Modifier</a>
-                        </td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    {% endif %}
+                                    <td>
+                                        <span class="badge">
+                                            {{ club.seasonsCount }} saison{{ club.seasonsCount > 1 ? 's' : '' }}
+                                        </span>
+                                    </td>
+
+                                    <td>
+                                        <div class="actions">
+                                            <a href="{{ path('app_club_show', { id: club.id }) }}" class="btn btn-secondary">
+                                                Voir
+                                            </a>
+
+                                            {% if is_granted('ROLE_ADMIN') %}
+                                                <a href="{{ path('app_club_edit', { id: club.id }) }}" class="btn btn-primary">
+                                                    Modifier
+                                                </a>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        {% endif %}
+
+    </div>
 {% endblock %}

@@ -14,32 +14,37 @@ use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[Route('/team')]
-#[IsGranted('ROLE_COACH')]
+#[IsGranted('IS_AUTHENTICATED_FULLY')]
 final class TeamController extends AbstractController
 {
     #[Route(name: 'app_team_index', methods: ['GET'])]
     public function index(TeamRepository $teamRepository): Response
     {
-        $currentUser = $this->getUser();
+        $currentUser = $this->getCurrentAppUser();
 
-        if (!$currentUser instanceof AppUser) {
-            throw $this->createAccessDeniedException();
-        }
+        $teams = $teamRepository->findVisibleForUser($currentUser);
+        $manageableTeams = $teamRepository->findManageableForUser($currentUser);
+
+        $manageableTeamIds = array_map(
+            static fn (Team $team): int => $team->getId(),
+            $manageableTeams
+        );
 
         return $this->render('team/index.html.twig', [
-            'teams' => $teamRepository->findVisibleForUser($currentUser),
+            'teams' => $teams,
+            'manageable_team_ids' => $manageableTeamIds,
+            'can_create_team' => $this->canCreateTeam(),
         ]);
     }
 
     #[Route('/new', name: 'app_team_new', methods: ['GET', 'POST'])]
-    #[IsGranted('ROLE_ADMIN')]
     public function new(Request $request, EntityManagerInterface $entityManager): Response
     {
-        $currentUser = $this->getUser();
-
-        if (!$currentUser instanceof AppUser) {
-            throw $this->createAccessDeniedException();
+        if (!$this->canCreateTeam()) {
+            throw $this->createAccessDeniedException("Vous ne pouvez pas créer d'équipe.");
         }
+
+        $currentUser = $this->getCurrentAppUser();
 
         $team = new Team();
 
@@ -50,7 +55,7 @@ final class TeamController extends AbstractController
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            if (!$this->canAccessTeam($team)) {
+            if (!$this->canCreateTeamForClub($team)) {
                 throw $this->createAccessDeniedException("Vous ne pouvez pas créer une équipe pour ce club.");
             }
 
@@ -71,31 +76,28 @@ final class TeamController extends AbstractController
     #[Route('/{id}', name: 'app_team_show', methods: ['GET'])]
     public function show(Team $team): Response
     {
-        if (!$this->canAccessTeam($team)) {
+        if (!$this->canViewTeam($team)) {
             throw $this->createAccessDeniedException("Vous ne pouvez pas accéder à cette équipe.");
         }
 
         return $this->render('team/show.html.twig', [
             'team' => $team,
+            'can_manage' => $this->canManageTeam($team),
+            'can_delete' => $this->canDeleteTeam($team),
         ]);
     }
 
     #[Route('/{id}/edit', name: 'app_team_edit', methods: ['GET', 'POST'])]
-    #[IsGranted('ROLE_ADMIN')]
     public function edit(
         Request $request,
         Team $team,
         EntityManagerInterface $entityManager
     ): Response {
-        if (!$this->canAccessTeam($team)) {
+        if (!$this->canManageTeam($team)) {
             throw $this->createAccessDeniedException("Vous ne pouvez pas modifier cette équipe.");
         }
 
-        $currentUser = $this->getUser();
-
-        if (!$currentUser instanceof AppUser) {
-            throw $this->createAccessDeniedException();
-        }
+        $currentUser = $this->getCurrentAppUser();
 
         $form = $this->createForm(TeamType::class, $team, [
             'current_user' => $currentUser,
@@ -104,7 +106,7 @@ final class TeamController extends AbstractController
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            if (!$this->canAccessTeam($team)) {
+            if (!$this->canManageTeam($team)) {
                 throw $this->createAccessDeniedException("Vous ne pouvez pas rattacher cette équipe à ce club.");
             }
 
@@ -124,13 +126,12 @@ final class TeamController extends AbstractController
     }
 
     #[Route('/{id}', name: 'app_team_delete', methods: ['POST'])]
-    #[IsGranted('ROLE_ADMIN')]
     public function delete(
         Request $request,
         Team $team,
         EntityManagerInterface $entityManager
     ): Response {
-        if (!$this->canAccessTeam($team)) {
+        if (!$this->canDeleteTeam($team)) {
             throw $this->createAccessDeniedException("Vous ne pouvez pas supprimer cette équipe.");
         }
 
@@ -159,7 +160,7 @@ final class TeamController extends AbstractController
         return $this->redirectToRoute('app_team_index', [], Response::HTTP_SEE_OTHER);
     }
 
-    private function canAccessTeam(Team $team): bool
+    private function canViewTeam(Team $team): bool
     {
         $currentUser = $this->getUser();
 
@@ -171,7 +172,37 @@ final class TeamController extends AbstractController
             return true;
         }
 
-        if ($this->isGranted('ROLE_ADMIN')) {
+        $userClub = $currentUser->getClub();
+        $teamClub = $team->getClub();
+
+        if ($userClub === null || $teamClub === null) {
+            return false;
+        }
+
+        if (
+            $this->isGranted('ROLE_ADMIN')
+            || $this->isGranted('ROLE_ADMIN_CLUB')
+            || $this->isGranted('ROLE_COACH')
+        ) {
+            return $userClub->getId() === $teamClub->getId();
+        }
+
+        return false;
+    }
+
+    private function canManageTeam(Team $team): bool
+    {
+        $currentUser = $this->getUser();
+
+        if (!$currentUser instanceof AppUser) {
+            return false;
+        }
+
+        if ($this->isGranted('ROLE_SUPER_ADMIN')) {
+            return true;
+        }
+
+        if ($this->isGranted('ROLE_ADMIN') || $this->isGranted('ROLE_ADMIN_CLUB')) {
             $userClub = $currentUser->getClub();
             $teamClub = $team->getClub();
 
@@ -181,6 +212,10 @@ final class TeamController extends AbstractController
         }
 
         if ($this->isGranted('ROLE_COACH')) {
+            if ($team->getId() === null) {
+                return false;
+            }
+
             foreach ($currentUser->getCoachedTeams() as $coachedTeam) {
                 if ($coachedTeam->getId() === $team->getId()) {
                     return true;
@@ -189,5 +224,71 @@ final class TeamController extends AbstractController
         }
 
         return false;
+    }
+
+    private function canCreateTeam(): bool
+    {
+        return $this->isGranted('ROLE_SUPER_ADMIN')
+            || $this->isGranted('ROLE_ADMIN')
+            || $this->isGranted('ROLE_ADMIN_CLUB');
+    }
+
+    private function canCreateTeamForClub(Team $team): bool
+    {
+        $currentUser = $this->getUser();
+
+        if (!$currentUser instanceof AppUser) {
+            return false;
+        }
+
+        if ($this->isGranted('ROLE_SUPER_ADMIN')) {
+            return true;
+        }
+
+        if ($this->isGranted('ROLE_ADMIN') || $this->isGranted('ROLE_ADMIN_CLUB')) {
+            $userClub = $currentUser->getClub();
+            $teamClub = $team->getClub();
+
+            return $userClub !== null
+                && $teamClub !== null
+                && $userClub->getId() === $teamClub->getId();
+        }
+
+        return false;
+    }
+
+    private function canDeleteTeam(Team $team): bool
+    {
+        $currentUser = $this->getUser();
+
+        if (!$currentUser instanceof AppUser) {
+            return false;
+        }
+
+        if ($this->isGranted('ROLE_SUPER_ADMIN')) {
+            return true;
+        }
+
+        if ($this->isGranted('ROLE_ADMIN') || $this->isGranted('ROLE_ADMIN_CLUB')) {
+            $userClub = $currentUser->getClub();
+            $teamClub = $team->getClub();
+
+            return $userClub !== null
+                && $teamClub !== null
+                && $userClub->getId() === $teamClub->getId();
+        }
+
+        return false;
+    }
+
+    private function getCurrentAppUser(): AppUser
+    {
+        $currentUser = $this->getUser();
+
+        if (!$currentUser instanceof AppUser) {
+            throw $this->createAccessDeniedException();
+        }
+
+        return $currentUser;
     }
 }

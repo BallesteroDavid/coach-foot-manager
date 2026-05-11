@@ -1,7 +1,9 @@
 <!DOCTYPE html>
-<html>
+<html lang="fr">
     <head>
         <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
         <title>{% block title %}Coach Foot{% endblock %}</title>
 
         <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 128 128%22><text y=%221.2em%22 font-size=%2296%22>⚽</text></svg>">
@@ -15,76 +17,156 @@
         {% endblock %}
     </head>
 
-    <body>
+    <body class="{% if app.user %}is-authenticated{% else %}is-guest{% endif %}">
         {% if app.user %}
-            <header>
-                <nav>
-                    <div>
-                        <strong>Coach Foot</strong>
+            {% set current_route = app.request.attributes.get('_route')|default('') %}
+
+            {% set role_label =
+                is_granted('ROLE_SUPER_ADMIN')
+                    ? 'Super admin'
+                    : (is_granted('ROLE_ADMIN')
+                        ? 'Admin'
+                        : 'Coach')
+            %}
+
+            <header class="app-header">
+                <nav class="app-navbar">
+                    <div class="app-brand">
+                        <a href="{{ path('app_dashboard') }}" class="app-brand-link">
+                            <span class="app-brand-icon">⚽</span>
+                            <span class="app-brand-text">Coach Foot</span>
+                        </a>
                     </div>
 
-                    <ul>
-                        <li>
-                            <a href="{{ path('app_dashboard') }}">Dashboard</a>
-                        </li>
-
-                        {% if is_granted('ROLE_ADMIN') %}
+                    <div class="app-nav-wrapper">
+                        <ul class="app-nav">
                             <li>
-                                <a href="{{ path('app_club_index') }}">Club</a>
+                                <a
+                                    href="{{ path('app_dashboard') }}"
+                                    class="app-nav-link {{ current_route starts with 'app_dashboard' ? 'is-active' : '' }}"
+                                >
+                                    Dashboard
+                                </a>
                             </li>
 
-                            <li>
-                                <a href="{{ path('app_user_index') }}">Utilisateurs</a>
-                            </li>
+                            {% if is_granted('ROLE_COACH') %}
+                                <li>
+                                    <a
+                                        href="{{ path('app_team_index') }}"
+                                        class="app-nav-link {{ current_route starts with 'app_team' ? 'is-active' : '' }}"
+                                    >
+                                        Équipes
+                                    </a>
+                                </li>
 
-                            <li>
-                                <a href="{{ path('app_category_index') }}">Catégories</a>
-                            </li>
+                                <li>
+                                    <a
+                                        href="{{ path('app_player_index') }}"
+                                        class="app-nav-link {{ current_route starts with 'app_player' ? 'is-active' : '' }}"
+                                    >
+                                        Joueurs
+                                    </a>
+                                </li>
 
-                            <li>
-                                <a href="{{ path('app_season_index') }}">Saisons</a>
-                            </li>
-                        {% endif %}
+                                <li>
+                                    <a
+                                        href="{{ path('app_football_match_index') }}"
+                                        class="app-nav-link {{ current_route starts with 'app_football_match' ? 'is-active' : '' }}"
+                                    >
+                                        Matchs
+                                    </a>
+                                </li>
 
-                        {% if is_granted('ROLE_COACH') %}
-                            <li>
-                                <a href="{{ path('app_team_index') }}">Équipes</a>
-                            </li>
+                                <li>
+                                    <a
+                                        href="{{ path('app_convocation_index') }}"
+                                        class="app-nav-link {{ current_route starts with 'app_convocation' ? 'is-active' : '' }}"
+                                    >
+                                        Convocations
+                                    </a>
+                                </li>
 
-                            <li>
-                                <a href="{{ path('app_player_index') }}">Joueurs</a>
-                            </li>
+                                <li>
+                                    <a
+                                        href="{{ path('app_training_session_index') }}"
+                                        class="app-nav-link {{ current_route starts with 'app_training_session' ? 'is-active' : '' }}"
+                                    >
+                                        Entraînements
+                                    </a>
+                                </li>
 
-                            <li>
-                                <a href="{{ path('app_football_match_index') }}">Matchs</a>
-                            </li>
+                                <li>
+                                    <a
+                                        href="{{ path('app_training_attendance_index') }}"
+                                        class="app-nav-link {{ current_route starts with 'app_training_attendance' ? 'is-active' : '' }}"
+                                    >
+                                        Présences
+                                    </a>
+                                </li>
+                            {% endif %}
 
-                            <li>
-                                <a href="{{ path('app_convocation_index') }}">Convocations</a>
-                            </li>
+                            {% if is_granted('ROLE_ADMIN') %}
+                                <li class="app-nav-separator"></li>
 
-                            <li>
-                                <a href="{{ path('app_training_session_index') }}">Entraînements</a>
-                            </li>
+                                <li>
+                                    <a
+                                        href="{{ path('app_club_index') }}"
+                                        class="app-nav-link {{ current_route starts with 'app_club' ? 'is-active' : '' }}"
+                                    >
+                                        Club
+                                    </a>
+                                </li>
 
-                            <li>
-                                <a href="{{ path('app_training_attendance_index') }}">Présences</a>
-                            </li>
-                        {% endif %}
-                    </ul>
+                                <li>
+                                    <a
+                                        href="{{ path('app_user_index') }}"
+                                        class="app-nav-link {{ current_route starts with 'app_user' ? 'is-active' : '' }}"
+                                    >
+                                        Utilisateurs
+                                    </a>
+                                </li>
 
-                    <div>
-                        <span>
-                            {{ app.user.fullName ?: app.user.userIdentifier }}
-                        </span>
+                                <li>
+                                    <a
+                                        href="{{ path('app_category_index') }}"
+                                        class="app-nav-link {{ current_route starts with 'app_category' ? 'is-active' : '' }}"
+                                    >
+                                        Catégories
+                                    </a>
+                                </li>
 
-                        <a href="{{ path('app_logout') }}">Déconnexion</a>
+                                <li>
+                                    <a
+                                        href="{{ path('app_season_index') }}"
+                                        class="app-nav-link {{ current_route starts with 'app_season' ? 'is-active' : '' }}"
+                                    >
+                                        Saisons
+                                    </a>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </div>
+
+                    <div class="app-user-menu">
+                        <div class="app-user-info">
+                            <span class="app-user-name">
+                                {{ app.user.fullName ?: app.user.userIdentifier }}
+                            </span>
+
+                            <span class="app-user-role">
+                                {{ role_label }}
+                            </span>
+                        </div>
+
+                        <a href="{{ path('app_logout') }}" class="btn btn-logout">
+                            Déconnexion
+                        </a>
                     </div>
                 </nav>
             </header>
         {% endif %}
 
-        <main>
+        <main class="app-main">
             {% for label, messages in app.flashes %}
                 {% for message in messages %}
                     <div class="alert alert-{{ label }}">

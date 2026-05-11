@@ -1,142 +1,377 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Détail de l'équipe{% endblock %}
+{% block title %}{{ team.name }}{% endblock %}
 
 {% block body %}
-    <h1>Détail de l'équipe</h1>
+    <div class="page-container">
 
-    <table class="table">
-        <tbody>
-            <tr>
-                <th>Nom</th>
-                <td>{{ team.name }}</td>
-            </tr>
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">{{ team.name }}</h1>
+                <p class="page-subtitle">
+                    Détail de l'équipe, des joueurs, des coachs et des entraînements associés.
+                </p>
+            </div>
 
-            <tr>
-                <th>Club</th>
-                <td>{{ team.club ? team.club.name : 'Aucun club' }}</td>
-            </tr>
+            <div class="top-actions">
+                <a href="{{ path('app_team_index') }}" class="btn btn-secondary">
+                    Retour à la liste
+                </a>
 
-            <tr>
-                <th>Catégorie</th>
-                <td>{{ team.category ? team.category.name : 'Aucune catégorie' }}</td>
-            </tr>
-
-            <tr>
-                <th>Saison</th>
-                <td>
-                    {% if team.season %}
-                        {{ team.season.name }} — {{ team.season.periodLabel }}
-                    {% else %}
-                        Aucune saison
-                    {% endif %}
-                </td>
-            </tr>
-
-            <tr>
-                <th>Coachs</th>
-                <td>
-                    {% if team.coaches|length > 0 %}
-                        <ul>
-                            {% for coach in team.coaches %}
-                                <li>
-                                    <a href="{{ path('app_user_show', { id: coach.id }) }}">
-                                        {{ coach.fullName }}
-                                    </a>
-                                </li>
-                            {% endfor %}
-                        </ul>
-                    {% else %}
-                        Aucun coach associé
-                    {% endif %}
-                </td>
-            </tr>
-
-            <tr>
-                <th>Description</th>
-                <td>{{ team.description ?: 'Non renseignée' }}</td>
-            </tr>
-
-            <tr>
-                <th>Nombre de joueurs</th>
-                <td>{{ team.playersCount }}</td>
-            </tr>
-
-            <tr>
-                <th>Nombre de matchs</th>
-                <td>{{ team.footballMatchesCount }}</td>
-            </tr>
-
-            <tr>
-                <th>Nombre d'entraînements</th>
-                <td>{{ team.trainingSessions|length }}</td>
-            </tr>
-        </tbody>
-    </table>
-
-    <h2>Entraînements</h2>
-
-    <p>
-        <a href="{{ path('app_training_session_new_from_team', { id: team.id }) }}">
-            Créer un entraînement pour cette équipe
-        </a>
-    </p>
-
-    {% if team.trainingSessions|length > 0 %}
-        <table class="table">
-            <thead>
-                <tr>
-                    <th>Date</th>
-                    <th>Horaires</th>
-                    <th>Durée</th>
-                    <th>Lieu</th>
-                    <th>Thème</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-
-            <tbody>
-                {% for training_session in team.trainingSessions %}
-                    <tr>
-                        <td>
-                            {{ training_session.trainingDate ? training_session.trainingDate|date('d/m/Y') : '-' }}
-                        </td>
-
-                        <td>{{ training_session.timeRangeLabel }}</td>
-
-                        <td>{{ training_session.durationLabel }}</td>
-
-                        <td>{{ training_session.location }}</td>
-
-                        <td>{{ training_session.theme ?: 'Non renseigné' }}</td>
-
-                        <td>
-                            <a href="{{ path('app_training_session_show', { id: training_session.id }) }}">Voir</a>
-                            <a href="{{ path('app_training_session_edit', { id: training_session.id }) }}">Modifier</a>
-                        </td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    {% else %}
-        <p>Aucun entraînement enregistré pour cette équipe.</p>
-    {% endif %}
-
-    <a href="{{ path('app_team_index') }}">Retour à la liste</a>
-    <a href="{{ path('app_team_edit', { id: team.id }) }}">Modifier</a>
-
-    {% if team.playersCount > 0 or team.footballMatchesCount > 0 or team.trainingSessions|length > 0 %}
-        <div class="alert alert-warning">
-            <p>
-                Cette équipe possède déjà des joueurs, des matchs ou des entraînements associés.
-                Elle ne peut pas être supprimée directement.
-            </p>
-
-            <p>
-                Retire d'abord les joueurs, les matchs et les entraînements liés avant de supprimer cette équipe.
-            </p>
+                {% if can_manage %}
+                    <a href="{{ path('app_team_edit', { id: team.id }) }}" class="btn btn-primary">
+                        Modifier
+                    </a>
+                {% endif %}
+            </div>
         </div>
-    {% else %}
-        {{ include('team/_delete_form.html.twig') }}
-    {% endif %}
+
+        {% if not can_manage %}
+            <div class="alert alert-info">
+                <p>
+                    Cette équipe est consultable en lecture seule.
+                    Tu peux voir ses informations, mais tu ne peux pas la modifier.
+                </p>
+            </div>
+        {% endif %}
+
+        <div class="card">
+            <h2 class="card-title">Informations générales</h2>
+
+            <div class="table-wrapper">
+                <table class="table">
+                    <tbody>
+                        <tr>
+                            <th>Nom</th>
+                            <td>
+                                <strong>{{ team.name }}</strong>
+                            </td>
+                        </tr>
+
+                        <tr>
+                            <th>Club</th>
+                            <td>
+                                {{ team.club ? team.club.name : 'Aucun club' }}
+                            </td>
+                        </tr>
+
+                        <tr>
+                            <th>Catégorie</th>
+                            <td>
+                                {% if team.category %}
+                                    <span class="badge">{{ team.category.name }}</span>
+                                {% else %}
+                                    <span class="badge badge-muted">Aucune catégorie</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+
+                        <tr>
+                            <th>Saison</th>
+                            <td>
+                                {% if team.season %}
+                                    {{ team.season.name }} — {{ team.season.periodLabel }}
+                                {% else %}
+                                    <span class="badge badge-muted">Aucune saison</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+
+                        <tr>
+                            <th>Coachs</th>
+                            <td>
+                                {% if team.coaches|length > 0 %}
+                                    <div class="actions">
+                                        {% for coach in team.coaches %}
+                                            {% if is_granted('ROLE_ADMIN') or is_granted('ROLE_ADMIN_CLUB') or is_granted('ROLE_SUPER_ADMIN') %}
+                                                <a href="{{ path('app_user_show', { id: coach.id }) }}" class="badge">
+                                                    {{ coach.fullName }}
+                                                </a>
+                                            {% else %}
+                                                <span class="badge">
+                                                    {{ coach.fullName }}
+                                                </span>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </div>
+                                {% else %}
+                                    <span class="badge badge-muted">Aucun coach associé</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+
+                        <tr>
+                            <th>Description</th>
+                            <td>
+                                {{ team.description ?: 'Non renseignée' }}
+                            </td>
+                        </tr>
+
+                        <tr>
+                            <th>Joueurs</th>
+                            <td>
+                                <span class="badge badge-success">
+                                    {{ team.playersCount }} joueur{{ team.playersCount > 1 ? 's' : '' }}
+                                </span>
+                            </td>
+                        </tr>
+
+                        <tr>
+                            <th>Matchs</th>
+                            <td>
+                                <span class="badge">
+                                    {{ team.footballMatchesCount }} match{{ team.footballMatchesCount > 1 ? 's' : '' }}
+                                </span>
+                            </td>
+                        </tr>
+
+                        <tr>
+                            <th>Entraînements</th>
+                            <td>
+                                <span class="badge">
+                                    {{ team.trainingSessions|length }} entraînement{{ team.trainingSessions|length > 1 ? 's' : '' }}
+                                </span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <section class="dashboard-section">
+            <div class="section-title">
+                <h2>Joueurs de l’équipe</h2>
+                <p>Les joueurs actuellement associés à cette équipe.</p>
+            </div>
+
+            <div class="top-actions">
+                {% if can_manage %}
+                    <a href="{{ path('app_player_new') }}" class="btn btn-primary">
+                        Ajouter un joueur
+                    </a>
+                {% endif %}
+            </div>
+
+            {% set positionLabels = {
+                gardien: 'Gardien',
+                defenseur: 'Défenseur',
+                milieu: 'Milieu',
+                attaquant: 'Attaquant'
+            } %}
+
+            {% set statusLabels = {
+                active: 'Actif',
+                injured: 'Blessé',
+                suspended: 'Suspendu',
+                inactive: 'Inactif'
+            } %}
+
+            {% set statusClasses = {
+                active: 'badge-success',
+                injured: 'badge-warning',
+                suspended: 'badge-danger',
+                inactive: 'badge-muted'
+            } %}
+
+            {% if team.players|length > 0 %}
+                <div class="card">
+                    <div class="table-wrapper">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Nom</th>
+                                    <th>Poste</th>
+                                    <th>N°</th>
+                                    <th>Statut</th>
+                                    <th>Contact</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+                                {% for player in team.players %}
+                                    <tr>
+                                        <td>
+                                            <strong>{{ player.fullName }}</strong>
+                                        </td>
+
+                                        <td>
+                                            {{ positionLabels[player.position]|default(player.position ?: 'Non renseigné') }}
+                                        </td>
+
+                                        <td>
+                                            {% if player.jerseyNumber %}
+                                                <span class="badge">
+                                                    #{{ player.jerseyNumber }}
+                                                </span>
+                                            {% else %}
+                                                <span class="badge badge-muted">-</span>
+                                            {% endif %}
+                                        </td>
+
+                                        <td>
+                                            <span class="badge {{ statusClasses[player.status]|default('badge-muted') }}">
+                                                {{ statusLabels[player.status]|default(player.status ?: 'Non renseigné') }}
+                                            </span>
+                                        </td>
+
+                                        <td>
+                                            {% if player.email %}
+                                                {{ player.email }}
+                                            {% elseif player.phone %}
+                                                {{ player.phone }}
+                                            {% elseif player.guardianEmail %}
+                                                {{ player.guardianEmail }}
+                                            {% elseif player.guardianPhone %}
+                                                {{ player.guardianPhone }}
+                                            {% else %}
+                                                <span class="badge badge-muted">Non renseigné</span>
+                                            {% endif %}
+                                        </td>
+
+                                        <td>
+                                            <div class="actions">
+                                                <a href="{{ path('app_player_show', { id: player.id }) }}" class="btn btn-secondary">
+                                                    Voir
+                                                </a>
+
+                                                {% if can_manage %}
+                                                    <a href="{{ path('app_player_edit', { id: player.id }) }}" class="btn btn-primary">
+                                                        Modifier
+                                                    </a>
+                                                {% endif %}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            {% else %}
+                <div class="empty-state">
+                    <strong>Aucun joueur associé à cette équipe.</strong>
+                    <p>
+                        {% if can_manage %}
+                            Tu peux ajouter un premier joueur à cette équipe.
+                        {% else %}
+                            Cette équipe n’a pas encore de joueurs enregistrés.
+                        {% endif %}
+                    </p>
+                </div>
+            {% endif %}
+        </section>
+
+        <section class="dashboard-section">
+            <div class="section-title">
+                <h2>Entraînements</h2>
+                <p>Les séances programmées pour cette équipe.</p>
+            </div>
+
+            <div class="top-actions">
+                {% if can_manage %}
+                    <a href="{{ path('app_training_session_new_from_team', { id: team.id }) }}" class="btn btn-primary">
+                        Créer un entraînement
+                    </a>
+                {% endif %}
+            </div>
+
+            {% if team.trainingSessions|length > 0 %}
+                <div class="card">
+                    <div class="table-wrapper">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Horaires</th>
+                                    <th>Durée</th>
+                                    <th>Lieu</th>
+                                    <th>Thème</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+                                {% for training_session in team.trainingSessions %}
+                                    <tr>
+                                        <td>
+                                            <strong>
+                                                {{ training_session.trainingDate ? training_session.trainingDate|date('d/m/Y') : '-' }}
+                                            </strong>
+                                        </td>
+
+                                        <td>
+                                            {{ training_session.timeRangeLabel }}
+                                        </td>
+
+                                        <td>
+                                            {{ training_session.durationLabel }}
+                                        </td>
+
+                                        <td>
+                                            {{ training_session.location ?: 'Non renseigné' }}
+                                        </td>
+
+                                        <td>
+                                            {{ training_session.theme ?: 'Non renseigné' }}
+                                        </td>
+
+                                        <td>
+                                            <div class="actions">
+                                                <a href="{{ path('app_training_session_show', { id: training_session.id }) }}" class="btn btn-secondary">
+                                                    Voir
+                                                </a>
+
+                                                {% if can_manage %}
+                                                    <a href="{{ path('app_training_session_edit', { id: training_session.id }) }}" class="btn btn-primary">
+                                                        Modifier
+                                                    </a>
+                                                {% endif %}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            {% else %}
+                <div class="empty-state">
+                    <strong>Aucun entraînement enregistré pour cette équipe.</strong>
+                    <p>
+                        {% if can_manage %}
+                            Tu peux créer une première séance pour cette équipe.
+                        {% else %}
+                            Aucun entraînement n'est encore associé à cette équipe.
+                        {% endif %}
+                    </p>
+                </div>
+            {% endif %}
+        </section>
+
+        {% if can_delete %}
+            <section class="dashboard-section">
+                <div class="section-title">
+                    <h2>Suppression</h2>
+                    <p>Action disponible uniquement si l’équipe peut être supprimée.</p>
+                </div>
+
+                {% if team.playersCount > 0 or team.footballMatchesCount > 0 or team.trainingSessions|length > 0 %}
+                    <div class="alert alert-warning">
+                        <p>
+                            Cette équipe possède déjà des joueurs, des matchs ou des entraînements associés.
+                            Elle ne peut pas être supprimée directement.
+                        </p>
+
+                        <p>
+                            Retire d'abord les joueurs, les matchs et les entraînements liés avant de supprimer cette équipe.
+                        </p>
+                    </div>
+                {% else %}
+                    {{ include('team/_delete_form.html.twig') }}
+                {% endif %}
+            </section>
+        {% endif %}
+
+    </div>
 {% endblock %}

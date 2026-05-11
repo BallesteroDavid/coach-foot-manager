@@ -1,74 +1,127 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Détail du club{% endblock %}
+{% block title %}{{ club.name }}{% endblock %}
 
 {% block body %}
-    <h1>Détail du club</h1>
+    <div class="page-container">
 
-    <table class="table">
-        <tbody>
-            <tr>
-                <th>Nom</th>
-                <td>{{ club.name }}</td>
-            </tr>
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">{{ club.name }}</h1>
+                <p class="page-subtitle">
+                    Détail du club et des éléments associés.
+                </p>
+            </div>
 
-            <tr>
-                <th>Ville</th>
-                <td>{{ club.city ?: 'Non renseignée' }}</td>
-            </tr>
+            <div class="top-actions">
+                <a href="{{ path('app_club_index') }}" class="btn btn-secondary">
+                    Retour à la liste
+                </a>
 
-            <tr>
-                <th>Adresse</th>
-                <td>{{ club.address ?: 'Non renseignée' }}</td>
-            </tr>
-
-            <tr>
-                <th>Email</th>
-                <td>{{ club.email ?: 'Non renseigné' }}</td>
-            </tr>
-
-            <tr>
-                <th>Téléphone</th>
-                <td>{{ club.phone ?: 'Non renseigné' }}</td>
-            </tr>
-
-            <tr>
-                <th>Utilisateurs</th>
-                <td>{{ club.appUsersCount }}</td>
-            </tr>
-
-            <tr>
-                <th>Équipes</th>
-                <td>{{ club.teamsCount }}</td>
-            </tr>
-
-            <tr>
-                <th>Catégories</th>
-                <td>{{ club.categoriesCount }}</td>
-            </tr>
-
-            <tr>
-                <th>Saisons</th>
-                <td>{{ club.seasonsCount }}</td>
-            </tr>
-        </tbody>
-    </table>
-
-    <a href="{{ path('app_club_index') }}">Retour à la liste</a>
-    <a href="{{ path('app_club_edit', { id: club.id }) }}">Modifier</a>
-
-    {% if club.appUsersCount > 0 or club.teamsCount > 0 or club.categoriesCount > 0 or club.seasonsCount > 0 %}
-        <div class="alert alert-warning">
-            <p>
-                Ce club possède déjà des utilisateurs, équipes, catégories ou saisons associés.
-                Il ne peut pas être supprimé directement.
-            </p>
-
-            <p>
-                Retire d'abord les éléments liés avant de supprimer ce club.
-            </p>
+                {% if is_granted('ROLE_ADMIN') %}
+                    <a href="{{ path('app_club_edit', { id: club.id }) }}" class="btn btn-primary">
+                        Modifier
+                    </a>
+                {% endif %}
+            </div>
         </div>
-    {% else %}
-        {{ include('club/_delete_form.html.twig') }}
-    {% endif %}
+
+        <div class="card">
+            <h2 class="card-title">Informations du club</h2>
+
+            <div class="table-wrapper">
+                <table class="table">
+                    <tbody>
+                        <tr>
+                            <th>Nom</th>
+                            <td>
+                                <strong>{{ club.name }}</strong>
+                            </td>
+                        </tr>
+
+                        <tr>
+                            <th>Ville</th>
+                            <td>{{ club.city ?: 'Non renseignée' }}</td>
+                        </tr>
+
+                        <tr>
+                            <th>Adresse</th>
+                            <td>{{ club.address ?: 'Non renseignée' }}</td>
+                        </tr>
+
+                        <tr>
+                            <th>Email</th>
+                            <td>{{ club.email ?: 'Non renseigné' }}</td>
+                        </tr>
+
+                        <tr>
+                            <th>Téléphone</th>
+                            <td>{{ club.phone ?: 'Non renseigné' }}</td>
+                        </tr>
+
+                        <tr>
+                            <th>Utilisateurs</th>
+                            <td>
+                                <span class="badge">
+                                    {{ club.appUsersCount }} utilisateur{{ club.appUsersCount > 1 ? 's' : '' }}
+                                </span>
+                            </td>
+                        </tr>
+
+                        <tr>
+                            <th>Équipes</th>
+                            <td>
+                                <span class="badge badge-success">
+                                    {{ club.teamsCount }} équipe{{ club.teamsCount > 1 ? 's' : '' }}
+                                </span>
+                            </td>
+                        </tr>
+
+                        <tr>
+                            <th>Catégories</th>
+                            <td>
+                                <span class="badge">
+                                    {{ club.categoriesCount }} catégorie{{ club.categoriesCount > 1 ? 's' : '' }}
+                                </span>
+                            </td>
+                        </tr>
+
+                        <tr>
+                            <th>Saisons</th>
+                            <td>
+                                <span class="badge">
+                                    {{ club.seasonsCount }} saison{{ club.seasonsCount > 1 ? 's' : '' }}
+                                </span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        {% if is_granted('ROLE_SUPER_ADMIN') %}
+            <section class="dashboard-section">
+                <div class="section-title">
+                    <h2>Suppression</h2>
+                    <p>Action réservée au super administrateur.</p>
+                </div>
+
+                {% if club.appUsersCount > 0 or club.teamsCount > 0 or club.categoriesCount > 0 or club.seasonsCount > 0 %}
+                    <div class="alert alert-warning">
+                        <p>
+                            Ce club possède déjà des utilisateurs, équipes, catégories ou saisons associés.
+                            Il ne peut pas être supprimé directement.
+                        </p>
+
+                        <p>
+                            Retire d'abord les éléments liés avant de supprimer ce club.
+                        </p>
+                    </div>
+                {% else %}
+                    {{ include('club/_delete_form.html.twig') }}
+                {% endif %}
+            </section>
+        {% endif %}
+
+    </div>
 {% endblock %}

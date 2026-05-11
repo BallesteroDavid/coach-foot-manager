@@ -3,66 +3,124 @@
 {% block title %}Utilisateurs{% endblock %}
 
 {% block body %}
-    <h1>Liste des utilisateurs</h1>
+    <div class="page-container">
 
-    <a href="{{ path('app_user_new') }}">Créer un utilisateur</a>
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">Utilisateurs</h1>
+                <p class="page-subtitle">
+                    Gestion des comptes utilisateurs du club.
+                </p>
+            </div>
 
-    {% set roleLabels = {
-        ROLE_USER: 'Utilisateur',
-        ROLE_COACH: 'Coach',
-        ROLE_ADMIN: 'Admin',
-        ROLE_SUPER_ADMIN: 'Super admin'
-    } %}
+            <div class="top-actions">
+                {% if is_granted('ROLE_ADMIN') %}
+                    <a href="{{ path('app_user_new') }}" class="btn btn-primary">
+                        Créer un utilisateur
+                    </a>
+                {% endif %}
+            </div>
+        </div>
 
-    {% if app_users is empty %}
-        <p>Aucun utilisateur enregistré.</p>
-    {% else %}
-        <table class="table">
-            <thead>
-                <tr>
-                    <th>Nom complet</th>
-                    <th>Email</th>
-                    <th>Rôles</th>
-                    <th>Club</th>
-                    <th>Équipes encadrées</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
+        {% set roleLabels = {
+            ROLE_USER: 'Utilisateur',
+            ROLE_COACH: 'Coach',
+            ROLE_ADMIN: 'Admin',
+            ROLE_SUPER_ADMIN: 'Super admin'
+        } %}
 
-            <tbody>
-                {% for app_user in app_users %}
-                    <tr>
-                        <td>{{ app_user.fullName ?: '-' }}</td>
+        {% set roleClasses = {
+            ROLE_USER: 'badge-muted',
+            ROLE_COACH: 'badge-success',
+            ROLE_ADMIN: 'badge',
+            ROLE_SUPER_ADMIN: 'badge-warning'
+        } %}
 
-                        <td>{{ app_user.email }}</td>
+        {% if app_users is empty %}
+            <div class="empty-state">
+                <strong>Aucun utilisateur enregistré.</strong>
+                <p>
+                    Crée un premier utilisateur pour donner accès au club.
+                </p>
+            </div>
+        {% else %}
+            <div class="card">
+                <div class="table-wrapper">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Nom complet</th>
+                                <th>Email</th>
+                                <th>Rôles</th>
+                                <th>Club</th>
+                                <th>Équipes encadrées</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
 
-                        <td>
-                            {% for role in app_user.roles %}
-                                {{ roleLabels[role]|default(role) }}{% if not loop.last %}, {% endif %}
+                        <tbody>
+                            {% for app_user in app_users %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ app_user.fullName ?: '-' }}</strong>
+                                    </td>
+
+                                    <td>
+                                        {{ app_user.email }}
+                                    </td>
+
+                                    <td>
+                                        <div class="actions">
+                                            {% for role in app_user.roles %}
+                                                <span class="badge {{ roleClasses[role]|default('badge-muted') }}">
+                                                    {{ roleLabels[role]|default(role) }}
+                                                </span>
+                                            {% endfor %}
+                                        </div>
+                                    </td>
+
+                                    <td>
+                                        {% if app_user.club %}
+                                            {{ app_user.club.name }}
+                                        {% else %}
+                                            <span class="badge badge-muted">Aucun club</span>
+                                        {% endif %}
+                                    </td>
+
+                                    <td>
+                                        {% if app_user.coachedTeams|length > 0 %}
+                                            <div class="actions">
+                                                {% for team in app_user.coachedTeams %}
+                                                    <span class="badge">
+                                                        {{ team.name }}
+                                                    </span>
+                                                {% endfor %}
+                                            </div>
+                                        {% else %}
+                                            <span class="badge badge-muted">Aucune équipe</span>
+                                        {% endif %}
+                                    </td>
+
+                                    <td>
+                                        <div class="actions">
+                                            <a href="{{ path('app_user_show', { id: app_user.id }) }}" class="btn btn-secondary">
+                                                Voir
+                                            </a>
+
+                                            {% if is_granted('ROLE_ADMIN') %}
+                                                <a href="{{ path('app_user_edit', { id: app_user.id }) }}" class="btn btn-primary">
+                                                    Modifier
+                                                </a>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
                             {% endfor %}
-                        </td>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        {% endif %}
 
-                        <td>
-                            {{ app_user.club ? app_user.club.name : 'Aucun club' }}
-                        </td>
-
-                        <td>
-                            {% if app_user.coachedTeams|length > 0 %}
-                                {% for team in app_user.coachedTeams %}
-                                    {{ team.name }}{% if not loop.last %}, {% endif %}
-                                {% endfor %}
-                            {% else %}
-                                Aucune équipe
-                            {% endif %}
-                        </td>
-
-                        <td>
-                            <a href="{{ path('app_user_show', { id: app_user.id }) }}">Voir</a>
-                            <a href="{{ path('app_user_edit', { id: app_user.id }) }}">Modifier</a>
-                        </td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    {% endif %}
+    </div>
 {% endblock %}

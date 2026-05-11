@@ -3,75 +3,110 @@
 {% block title %}Gérer les présences{% endblock %}
 
 {% block body %}
-    <h1>Gérer les présences</h1>
+    <div class="page-container">
 
-    <p>
-        Entraînement :
-        <strong>{{ team.name }}</strong>
-        —
-        {{ training_session.trainingDate ? training_session.trainingDate|date('d/m/Y') : '-' }}
-        —
-        {{ training_session.timeRangeLabel }}
-    </p>
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">Gérer les présences</h1>
+                <p class="page-subtitle">
+                    {{ team.name }}
+                    —
+                    {{ training_session.trainingDate ? training_session.trainingDate|date('d/m/Y') : '-' }}
+                    —
+                    {{ training_session.timeRangeLabel }}
+                </p>
+            </div>
 
-    {% if team.players|length > 0 %}
-        <form method="post">
-            <input type="hidden" name="_token" value="{{ csrf_token('manage_attendances' ~ training_session.id) }}">
+            <div class="top-actions">
+                <a href="{{ path('app_training_session_show', { id: training_session.id }) }}" class="btn btn-secondary">
+                    Retour à l'entraînement
+                </a>
+            </div>
+        </div>
 
-            <table class="table">
-                <thead>
-                    <tr>
-                        <th>Joueur</th>
-                        <th>Statut</th>
-                        <th>Commentaire</th>
-                    </tr>
-                </thead>
+        {% if team.players|length > 0 %}
+            <form method="post" class="attendance-form">
+                <input type="hidden" name="_token" value="{{ csrf_token('manage_attendances' ~ training_session.id) }}">
 
-                <tbody>
-                    {% for player in team.players %}
-                        {% set attendance = existing_attendances[player.id]|default(null) %}
-                        {% set currentStatus = attendance ? attendance.status : 'present' %}
+                <div class="card">
+                    <div class="table-wrapper">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Joueur</th>
+                                    <th>Statut</th>
+                                    <th>Commentaire</th>
+                                </tr>
+                            </thead>
 
-                        <tr>
-                            <td>
-                                <a href="{{ path('app_player_show', { id: player.id }) }}">
-                                    {{ player.fullName }}
-                                </a>
-                            </td>
+                            <tbody>
+                                {% for player in team.players %}
+                                    {% set attendance = existing_attendances[player.id]|default(null) %}
+                                    {% set currentStatus = attendance ? attendance.status : 'present' %}
 
-                            <td>
-                                <select name="statuses[{{ player.id }}]">
-                                    <option value="present" {{ currentStatus == 'present' ? 'selected' : '' }}>Présent</option>
-                                    <option value="absent" {{ currentStatus == 'absent' ? 'selected' : '' }}>Absent</option>
-                                    <option value="excused" {{ currentStatus == 'excused' ? 'selected' : '' }}>Excusé</option>
-                                    <option value="late" {{ currentStatus == 'late' ? 'selected' : '' }}>En retard</option>
-                                    <option value="injured" {{ currentStatus == 'injured' ? 'selected' : '' }}>Blessé</option>
-                                    <option value="exempt" {{ currentStatus == 'exempt' ? 'selected' : '' }}>Dispensé</option>
-                                </select>
-                            </td>
+                                    <tr>
+                                        <td>
+                                            <a href="{{ path('app_player_show', { id: player.id }) }}">
+                                                <strong>{{ player.fullName }}</strong>
+                                            </a>
+                                        </td>
 
-                            <td>
-                                <input
-                                    type="text"
-                                    name="comments[{{ player.id }}]"
-                                    value="{{ attendance ? attendance.comment : '' }}"
-                                    placeholder="Commentaire optionnel"
-                                >
-                            </td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+                                        <td>
+                                            <select name="statuses[{{ player.id }}]">
+                                                <option value="present" {{ currentStatus == 'present' ? 'selected' : '' }}>
+                                                    Présent
+                                                </option>
+                                                <option value="absent" {{ currentStatus == 'absent' ? 'selected' : '' }}>
+                                                    Absent
+                                                </option>
+                                                <option value="excused" {{ currentStatus == 'excused' ? 'selected' : '' }}>
+                                                    Excusé
+                                                </option>
+                                                <option value="late" {{ currentStatus == 'late' ? 'selected' : '' }}>
+                                                    En retard
+                                                </option>
+                                                <option value="injured" {{ currentStatus == 'injured' ? 'selected' : '' }}>
+                                                    Blessé
+                                                </option>
+                                                <option value="exempt" {{ currentStatus == 'exempt' ? 'selected' : '' }}>
+                                                    Dispensé
+                                                </option>
+                                            </select>
+                                        </td>
 
-            <button class="btn" type="submit">
-                Enregistrer la feuille de présence
-            </button>
-        </form>
-    {% else %}
-        <p>Aucun joueur dans cette équipe.</p>
-    {% endif %}
+                                        <td>
+                                            <input
+                                                type="text"
+                                                name="comments[{{ player.id }}]"
+                                                value="{{ attendance ? attendance.comment : '' }}"
+                                                placeholder="Commentaire optionnel"
+                                            >
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
 
-    <a href="{{ path('app_training_session_show', { id: training_session.id }) }}">
-        Retour à l'entraînement
-    </a>
+                <div class="form-actions">
+                    <button class="btn btn-primary" type="submit">
+                        Enregistrer la feuille de présence
+                    </button>
+
+                    <a href="{{ path('app_training_session_show', { id: training_session.id }) }}" class="btn btn-secondary">
+                        Annuler
+                    </a>
+                </div>
+            </form>
+        {% else %}
+            <div class="empty-state">
+                <strong>Aucun joueur dans cette équipe.</strong>
+                <p>
+                    Ajoute des joueurs à cette équipe avant de gérer une feuille de présence.
+                </p>
+            </div>
+        {% endif %}
+
+    </div>
 {% endblock %}

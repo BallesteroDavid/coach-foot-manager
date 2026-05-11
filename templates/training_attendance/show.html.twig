@@ -3,59 +3,131 @@
 {% block title %}Détail de la présence{% endblock %}
 
 {% block body %}
-    <h1>Détail de la présence</h1>
+    <div class="page-container">
 
-    <table class="table">
-        <tbody>
-            <tr>
-                <th>Entraînement</th>
-                <td>
-                    {% if training_attendance.trainingSession %}
-                        {{ training_attendance.trainingSession.trainingDate ? training_attendance.trainingSession.trainingDate|date('d/m/Y') : '-' }}
-                        —
-                        {{ training_attendance.trainingSession.team ? training_attendance.trainingSession.team.name : 'Équipe inconnue' }}
-                        —
-                        {{ training_attendance.trainingSession.timeRangeLabel }}
-                    {% else %}
-                        Entraînement inconnu
-                    {% endif %}
-                </td>
-            </tr>
+        {% set statusClasses = {
+            present: 'badge-success',
+            absent: 'badge-danger',
+            excused: 'badge-warning',
+            late: 'badge-warning',
+            injured: 'badge-danger',
+            exempt: 'badge-muted'
+        } %}
 
-            <tr>
-                <th>Joueur</th>
-                <td>
-                    {% if training_attendance.player %}
-                        <a href="{{ path('app_player_show', { id: training_attendance.player.id }) }}">
-                            {{ training_attendance.player.fullName }}
-                        </a>
-                    {% else %}
-                        Joueur inconnu
-                    {% endif %}
-                </td>
-            </tr>
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">Détail de la présence</h1>
+                <p class="page-subtitle">
+                    Statut de présence d’un joueur à un entraînement.
+                </p>
+            </div>
 
-            <tr>
-                <th>Statut</th>
-                <td>{{ training_attendance.statusLabel }}</td>
-            </tr>
+            <div class="top-actions">
+                <a href="{{ path('app_training_attendance_index') }}" class="btn btn-secondary">
+                    Retour à la liste
+                </a>
 
-            <tr>
-                <th>Commentaire</th>
-                <td>{{ training_attendance.comment ?: 'Aucun commentaire' }}</td>
-            </tr>
-        </tbody>
-    </table>
+                {% if training_attendance.trainingSession %}
+                    <a href="{{ path('app_training_session_show', { id: training_attendance.trainingSession.id }) }}" class="btn btn-secondary">
+                        Retour à l'entraînement
+                    </a>
+                {% endif %}
 
-    <a href="{{ path('app_training_attendance_index') }}">Retour à la liste</a>
+                {% if is_granted('ROLE_COACH') %}
+                    <a href="{{ path('app_training_attendance_edit', { id: training_attendance.id }) }}" class="btn btn-primary">
+                        Modifier
+                    </a>
+                {% endif %}
+            </div>
+        </div>
 
-    {% if training_attendance.trainingSession %}
-        <a href="{{ path('app_training_session_show', { id: training_attendance.trainingSession.id }) }}">
-            Retour à l'entraînement
-        </a>
-    {% endif %}
+        <div class="card">
+            <h2 class="card-title">Informations de présence</h2>
 
-    <a href="{{ path('app_training_attendance_edit', { id: training_attendance.id }) }}">Modifier</a>
+            <div class="table-wrapper">
+                <table class="table">
+                    <tbody>
+                        <tr>
+                            <th>Entraînement</th>
+                            <td>
+                                {% if training_attendance.trainingSession %}
+                                    <strong>
+                                        {{ training_attendance.trainingSession.trainingDate ? training_attendance.trainingSession.trainingDate|date('d/m/Y') : '-' }}
+                                    </strong>
+                                    —
+                                    {{ training_attendance.trainingSession.team ? training_attendance.trainingSession.team.name : 'Équipe inconnue' }}
+                                    —
+                                    {{ training_attendance.trainingSession.timeRangeLabel }}
+                                {% else %}
+                                    <span class="badge badge-muted">Entraînement inconnu</span>
+                                {% endif %}
+                            </td>
+                        </tr>
 
-    {{ include('training_attendance/_delete_form.html.twig') }}
+                        <tr>
+                            <th>Joueur</th>
+                            <td>
+                                {% if training_attendance.player %}
+                                    <a href="{{ path('app_player_show', { id: training_attendance.player.id }) }}">
+                                        <strong>{{ training_attendance.player.fullName }}</strong>
+                                    </a>
+                                {% else %}
+                                    <span class="badge badge-muted">Joueur inconnu</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+
+                        <tr>
+                            <th>Statut</th>
+                            <td>
+                                <span class="badge {{ statusClasses[training_attendance.status]|default('badge-muted') }}">
+                                    {{ training_attendance.statusLabel }}
+                                </span>
+                            </td>
+                        </tr>
+
+                        <tr>
+                            <th>Commentaire</th>
+                            <td>
+                                {{ training_attendance.comment ?: 'Aucun commentaire' }}
+                            </td>
+                        </tr>
+
+                        <tr>
+                            <th>Modifié par</th>
+                            <td>
+                                {{ training_attendance.updatedBy ? training_attendance.updatedBy.fullName : 'Non renseigné' }}
+                            </td>
+                        </tr>
+
+                        <tr>
+                            <th>Créée le</th>
+                            <td>
+                                {{ training_attendance.createdAt ? training_attendance.createdAt|date('d/m/Y H:i') : '-' }}
+                            </td>
+                        </tr>
+
+                        <tr>
+                            <th>Modifiée le</th>
+                            <td>
+                                {{ training_attendance.updatedAt ? training_attendance.updatedAt|date('d/m/Y H:i') : '-' }}
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        {% if is_granted('ROLE_COACH') %}
+            <section class="dashboard-section">
+                <div class="section-title">
+                    <h2>Suppression</h2>
+                    <p>Supprimer cette présence si elle a été saisie par erreur.</p>
+                </div>
+
+                {{ include('training_attendance/_delete_form.html.twig') }}
+            </section>
+        {% endif %}
+
+    </div>
 {% endblock %}
